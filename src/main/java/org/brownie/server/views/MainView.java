@@ -2,11 +2,16 @@ package org.brownie.server.views;
 
 
 import java.io.File;
+import java.nio.file.Paths;
+import java.util.AbstractMap;
+import java.util.Map.Entry;
 
 import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.brownie.videojs.VideoJS;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -20,6 +25,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.PWA;
+import com.vaadin.flow.server.StreamRegistration;
 
 /**
  * A sample Vaadin view class.
@@ -58,6 +64,8 @@ public class MainView extends VerticalLayout {
 	private File rootFile;
 	
     public MainView(@Autowired AuthenticationService authService) {
+    	VideoJS.getResourcesRegistrations();
+    	
     	LoginOverlay login = new LoginOverlay();
     	login.addLoginListener(e -> {
     		if (authService.isValidUser(e.getUsername(), e.getPassword())) {
@@ -84,10 +92,18 @@ public class MainView extends VerticalLayout {
     	this.setSizeFull();
     	
     	if (FileSystemDataProvider.getRootFile() == null) {
-    		rootFile = new File(new File("").getAbsolutePath());
-    		if (!rootFile.exists() || !rootFile.isDirectory()) {
-    			Notification.show("Can not locate root directory '" + rootFile.getAbsolutePath() + "'");
-    			return;
+    		try {
+    			// FIXME root dir config needed
+//    			rootFile = FileSystems.getDefault().getPath("Users", "vladimirsenchihin", "Desktop", "Not_For_Backup").toFile();
+    			rootFile = Paths.get(System.getProperty("user.home"), "Desktop", "Not_For_Backup").toFile();
+//    			rootFile = new File(this.getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile().getParentFile();
+    		} catch (Exception ex) {
+    			rootFile = new File(new File("").getAbsolutePath());
+    		} finally {
+        		if (!rootFile.exists() || !rootFile.isDirectory()) {
+        			Notification.show("Can not locate root directory '" + rootFile.getAbsolutePath() + "'");
+        			return;
+        		}
     		}
     	}
     	
@@ -138,8 +154,8 @@ public class MainView extends VerticalLayout {
             			return;
             		});
 
-            		Label videoPlayer = new Label("Video player");
-            		videoPlayer.setSizeFull();
+            		VideoJS videoPlayer = new VideoJS(UI.getCurrent().getSession(), file, null);
+            		videoPlayer.setHeight("90%");
             		vl.add(videoPlayer);
             		vl.add(closeButton);
             		
@@ -148,8 +164,13 @@ public class MainView extends VerticalLayout {
             		dialog.setHeight("90%");
             		
             		playButton.setEnabled(true);
-            		
             		dialog.open();
+            		
+            		for (Entry<String, AbstractMap.SimpleImmutableEntry<StreamRegistration, File>> e : VideoJS.getResourcesRegistrations().entrySet()) {
+            			System.out.println("REG PATH " + e.getKey());
+            			System.out.println("URI " + e.getValue().getKey().getResourceUri());
+            			System.out.println("PATH" + e.getValue().getValue().getAbsolutePath());
+            		}
             	});
     	        	
     	        return playButton;
