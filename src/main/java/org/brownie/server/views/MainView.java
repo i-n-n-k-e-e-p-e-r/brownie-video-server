@@ -3,18 +3,18 @@ package org.brownie.server.views;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.AbstractMap;
-import java.util.Map.Entry;
+import java.sql.SQLException;
 
+import org.brownie.server.db.DBConnectionProvider;
+import org.brownie.server.db.User;
+import org.brownie.server.dialogs.PlayerDialog;
 import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.services.AuthenticationService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.brownie.videojs.VideoJS;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.login.LoginI18n;
@@ -25,7 +25,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.PWA;
-import com.vaadin.flow.server.StreamRegistration;
 
 /**
  * A sample Vaadin view class.
@@ -62,15 +61,30 @@ public class MainView extends VerticalLayout {
      */
 	
 	private File rootFile;
+	private User currentUser;
 	
     public MainView(@Autowired AuthenticationService authService) {
+    	DBConnectionProvider.getInstance();
     	VideoJS.getResourcesRegistrations();
     	
     	LoginOverlay login = new LoginOverlay();
     	login.addLoginListener(e -> {
     		if (authService.isValidUser(e.getUsername(), e.getPassword())) {
         		login.close();
-        		initMainView();
+        		
+        		try {
+					currentUser = ((User)DBConnectionProvider
+							.getInstance()
+							.getOrmDaos()
+							.get(User.class.getClass())
+								.queryForEq("name", e.getUsername())
+								.iterator()
+								.next());
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				} finally {
+	        		initMainView();
+				}
         		
         		return;
     		}
@@ -131,46 +145,11 @@ public class MainView extends VerticalLayout {
             	playButton.setHeight("30px");
             	playButton.setDisableOnClick(true);
             	playButton.addClickListener(playListener -> {
-            		final Dialog dialog = new Dialog();
-            		dialog.setModal(true);
-            		dialog.setDraggable(true);
-            		dialog.setResizable(true);
-            		dialog.setCloseOnOutsideClick(false);
-            		
-            		VerticalLayout vl = new VerticalLayout();
-            		vl.setAlignItems(Alignment.CENTER);
-            		vl.setSpacing(true);
-            		vl.setPadding(true);
-            		vl.setSizeFull();
-            		
-            		Button closeButton = new Button("Stop and close");
-            		closeButton.setWidth("90%");
-            		closeButton.setHeight("30px");
-            		
-            		closeButton.setDisableOnClick(true);
-            		closeButton.addClickListener(closeListener -> {
-            			dialog.close();
-            			closeButton.setEnabled(true);
-            			return;
-            		});
-
-            		VideoJS videoPlayer = new VideoJS(UI.getCurrent().getSession(), file, null);
-            		videoPlayer.setHeight("90%");
-            		vl.add(videoPlayer);
-            		vl.add(closeButton);
-            		
-            		dialog.add(vl);
+            		final PlayerDialog dialog = new PlayerDialog(file, null);
             		dialog.setWidth("90%");
             		dialog.setHeight("90%");
-            		
             		playButton.setEnabled(true);
             		dialog.open();
-            		
-            		for (Entry<String, AbstractMap.SimpleImmutableEntry<StreamRegistration, File>> e : VideoJS.getResourcesRegistrations().entrySet()) {
-            			System.out.println("REG PATH " + e.getKey());
-            			System.out.println("URI " + e.getValue().getKey().getResourceUri());
-            			System.out.println("PATH" + e.getValue().getValue().getAbsolutePath());
-            		}
             	});
     	        	
     	        return playButton;
@@ -184,5 +163,13 @@ public class MainView extends VerticalLayout {
         
         add(treeGrid);
     }
+
+	public User getCurrentUser() {
+		return currentUser;
+	}
+
+	public void setCurrentUser(User currentUser) {
+		this.currentUser = currentUser;
+	}
 
 }

@@ -3,97 +3,98 @@ package org.brownie.server.db;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.dao.DaoManager;
+import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.support.ConnectionSource;
+import com.j256.ormlite.table.TableUtils;
 
 public class DBConnectionProvider {
 	
 	public static final String DB_NAME = "brownieDB.db";
 	
 	private static DBConnectionProvider provider = null;
-	private static Connection connection = null;
 	private String connectionString = "";
+	
+	private ConnectionSource connectionSource;
+	private final Map<Class<? extends Object>, Dao<?, ?>> ormDaos = Collections.synchronizedMap(new HashMap<>());
 
-	private DBConnectionProvider() {
+	private DBConnectionProvider() throws SQLException {
 		String pathToDB = new File("").getAbsolutePath();
 		this.connectionString = "jdbc:sqlite:" + pathToDB + File.separator + DB_NAME;
-		try {
-			connection = DriverManager.getConnection(connectionString);
-		} catch (SQLException e) {
-			e.printStackTrace();
+		
+		if(!new File(pathToDB + File.separator + DB_NAME).exists()) {
+			createDataBase();
 		}
-	}
-	
-	private DBConnectionProvider(String connectionString) {
-		this.connectionString = connectionString;
-		try {
-			connection = DriverManager.getConnection(connectionString);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		
+		initDataTables();
 	}
 	
 	public static DBConnectionProvider getInstance() {
 		synchronized(DBConnectionProvider.class) {
 			if (provider == null) {
-				provider = new DBConnectionProvider();
+				try {
+					provider = new DBConnectionProvider();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		return provider;
 	}
 	
-	public static DBConnectionProvider getInstance(String connectionString) {
-		synchronized(DBConnectionProvider.class) {
-			if (provider == null) {
-				provider = new DBConnectionProvider(connectionString);
-			}
-		}
-		return provider;
-	}
-	
-    public boolean testConnection() {
-    	return false;
+    public boolean createDataBase() {
+    	boolean result = false;
     	
-    	//TODO
-//    	Statement stmt = null;
-//    	ResultSet rs = null;
-//    	try {
-//    		String pathToDB = new File("").getAbsolutePath();
-//    		String connectionString = "jdbc:sqlite:" + pathToDB + "/" + DB_NAME;
-//    		System.out.println(connectionString);
-//    		conn = DriverManager.getConnection(connectionString);
-//    		stmt = conn.createStatement();
-//    		rs = stmt.executeQuery("select datetime('now')");
-//    		if(rs.next()) {
-//    			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-//    			System.out.print("from db " + dateFormat.parse(rs.getString(1)));
-//    		}
-//    	} catch (Exception ex) {
-//    		ex.printStackTrace();
-//    	} finally {
-//    		if (rs != null) {
-//    			try {
-//					rs.close();
-//				} catch (SQLException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//    		}
-//    		if(stmt != null) {
-//    			try {
-//					stmt.close();
-//				} catch (SQLException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//    		}
-//    	}
+    	Connection connection = null;
+    	Statement stmt = null;
+    	ResultSet rs = null;
+    	try {
+    		connection = DriverManager.getConnection(this.connectionString);
+    		stmt = connection.createStatement();
+    		rs = stmt.executeQuery("select 1");
+    		
+    		if (rs.next()) result = true;
+    		
+    	} catch (Exception ex) {
+    		ex.printStackTrace();
+    	} finally {
+			try {
+				if (rs != null) rs.close();
+				if (stmt != null) stmt.close();
+				if (connection != null) connection.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+    	}
+    	
+    	return result;
     }
+	
+	private void initDataTables() throws SQLException {
+        // create a connection source to our database
+        this.connectionSource =
+            new JdbcConnectionSource(this.connectionString);
+        
+        // TODO instantiate daos all tables
+        getOrmDaos().put(User.class.getClass(), DaoManager.createDao(connectionSource, User.class));
 
-	public static Connection getConnection() {
-		return connection;
+        // TODO init all tables
+        TableUtils.createTableIfNotExists(connectionSource, User.class);
 	}
-
-	public String getConnectionString() {
-		return connectionString;
+	
+	public ConnectionSource getConnectionSource() {
+		return this.connectionSource;
+	}
+	
+	public Map<Class<? extends Object>, Dao<?, ?>> getOrmDaos() {
+		return this.ormDaos;
 	}
 }
