@@ -44,7 +44,6 @@ public class UserEditDialog extends Dialog{
 	}
 	
 	private void init() {
-		//TODO
 		VerticalLayout mainLayout = new VerticalLayout();
 		mainLayout.setSizeFull();
 		mainLayout.setMargin(true);
