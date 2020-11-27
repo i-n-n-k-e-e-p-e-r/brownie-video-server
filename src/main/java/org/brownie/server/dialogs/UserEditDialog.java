@@ -7,9 +7,9 @@ import org.brownie.server.db.User;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 
@@ -20,7 +20,6 @@ public class UserEditDialog extends Dialog{
 	 */
 	private static final long serialVersionUID = 5620752939841369016L;
 	
-	public static final String MIN_HEIGHT = "500px";
 	public static final String MIN_WIDTH = "400px";
 	
 	
@@ -39,23 +38,19 @@ public class UserEditDialog extends Dialog{
 		setCloseOnOutsideClick(true);
 		setCloseOnEsc(true);
 		
-		setMinHeight(MIN_HEIGHT);
 		setMinWidth(MIN_WIDTH);
 	}
 	
 	private void init() {
-		VerticalLayout mainLayout = new VerticalLayout();
+		FormLayout mainLayout = new FormLayout();
 		mainLayout.setSizeFull();
-		mainLayout.setMargin(true);
-		mainLayout.setSpacing(true);
-		
+
 		Label title = new Label();
 		title.setText("Edit user");
 		title.setWidthFull();
 		if (!isEdit()) {
 			title.setText("New user registration");
 		}
-		mainLayout.add(title);
 		
 		TextField userName = new TextField();
 		userName.setWidth("100%");
@@ -72,19 +67,11 @@ public class UserEditDialog extends Dialog{
 		PasswordField repeatPassword = new PasswordField();
 		repeatPassword.setWidth("100%");
 		repeatPassword.setLabel("Repeat password:");
-		
-		mainLayout.add(userName);
-		mainLayout.add(password);
-		if (isEdit()) {
-			mainLayout.add(newPassword);
-		}
-		mainLayout.add(repeatPassword);
-		
+				
 		Checkbox isAdmin = new Checkbox();
 		isAdmin.setLabel("Administrator");
 		isAdmin.setWidth("100%");
 		isAdmin.setValue(true);
-		mainLayout.add(isAdmin);
 		
 		HorizontalLayout buttonsLayout = new HorizontalLayout();
 		buttonsLayout.setSpacing(true);
@@ -97,6 +84,8 @@ public class UserEditDialog extends Dialog{
 		save.addClickListener(e -> {
 			if (userName.getValue().trim().length() == 0 
 					|| !User.isUserNameFreeToUse(userName.getValue().trim())) {
+				
+				save.setEnabled(true);
 				return;
 			}
 			
@@ -112,11 +101,12 @@ public class UserEditDialog extends Dialog{
 				try {
 					user.updateUserDBData();
 				} catch (SQLException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
-
+			
+			close();
+			save.setEnabled(true);
 		});
 		
 		Button cancel = new Button();
@@ -129,6 +119,14 @@ public class UserEditDialog extends Dialog{
 		
 		buttonsLayout.add(cancel, save);
 		
+		mainLayout.add(title);
+		mainLayout.add(userName);
+		mainLayout.add(isAdmin);
+		mainLayout.add(password);
+		if (isEdit()) {
+			mainLayout.add(newPassword);
+		}
+		mainLayout.add(repeatPassword);
 		mainLayout.add(buttonsLayout);
 		
 		add(mainLayout);

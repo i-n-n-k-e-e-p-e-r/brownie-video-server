@@ -3,7 +3,6 @@ package org.brownie.server.views;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 
 import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
@@ -69,23 +68,11 @@ public class MainView extends VerticalLayout {
     	
     	LoginOverlay login = new LoginOverlay();
     	login.addLoginListener(e -> {
-    		if (authService.isValidUser(e.getUsername(), e.getPassword())) {
+    		currentUser = authService.getValidUser(e.getUsername(), e.getPassword());
+    		if (currentUser != null) {
         		login.close();
-        		
-        		try {
-					currentUser = ((User)DBConnectionProvider
-							.getInstance()
-							.getOrmDaos()
-							.get(User.class.getClass())
-								.queryForEq("name", e.getUsername())
-								.iterator()
-								.next());
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				} finally {
-	        		initMainView();
-				}
-        		
+        		initMainView();
+
         		return;
     		}
 

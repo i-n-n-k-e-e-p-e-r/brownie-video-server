@@ -2,8 +2,8 @@ package org.brownie.server.db;
 
 import java.sql.SQLException;
 
+import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.field.DatabaseField;
-import com.j256.ormlite.stmt.UpdateBuilder;
 import com.j256.ormlite.table.DatabaseTable;
 
 
@@ -16,7 +16,6 @@ public class User {
 	}
 	
     @DatabaseField(generatedId = true, 
-    		canBeNull = false, 
     		allowGeneratedIdInsert=true,
     		uniqueIndex = true)
     private Integer userId;
@@ -81,20 +80,20 @@ public class User {
     	return this.userId;
     }
     
-    public void updateUserDBData() throws SQLException {
-    	//TODO
-    	UpdateBuilder<?, ?> updateBuilder = DBConnectionProvider.getInstance().getOrmDaos().get(User.class.getClass()).updateBuilder();
-    	// set the criteria like you would a QueryBuilder
-    	updateBuilder.where().eq("userId", this.getUserId());
-    	// update the value of your field(s)
-    	updateBuilder.updateColumnValue("name", this.getName());
-    	updateBuilder.updateColumnValue("password", this.getPassword());
-    	updateBuilder.updateColumnValue("group", this.getUserGroup().ordinal());
-    	updateBuilder.update();
+    @SuppressWarnings("unchecked")
+	public void updateUserDBData() throws SQLException {
+    	((Dao<User, Integer>)DBConnectionProvider.getInstance().getOrmDaos()
+    			.get(User.class.getClass())).createOrUpdate(this);
     }
     
-    public void deleteUserFromDB() {
-    	//TODO
+    @SuppressWarnings("unchecked")
+	public void deleteUserFromDB() {
+    	try {
+			((Dao<User, Integer>)DBConnectionProvider.getInstance().getOrmDaos()
+					.get(User.class.getClass())).delete(this);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
     }
     
     public static boolean isUserNameFreeToUse(String userName) {
