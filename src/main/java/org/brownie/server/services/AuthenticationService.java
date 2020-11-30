@@ -2,6 +2,7 @@ package org.brownie.server.services;
 
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.List;
 
 import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
@@ -26,15 +27,16 @@ public class AuthenticationService implements Serializable{
 				UserEditDialog newUserDialog = new UserEditDialog(false);
 				newUserDialog.setWidth(UserEditDialog.MIN_WIDTH);
 				newUserDialog.open();
-			} else {
-				authenticatedUser = ((User)DBConnectionProvider
-						.getInstance()
-						.getOrmDaos()
-						.get(User.class)
-							.queryForEq("name", userName)
-							.iterator()
-							.next());
 
+				return null;
+			}
+
+			List<?> users = (DBConnectionProvider
+					.getInstance()
+					.getOrmDaos()
+					.get(User.class)).queryForEq("name", userName);
+			if (users != null && users.size() > 0) {
+				authenticatedUser = (User)users.iterator().next();
 				String hashFromForm = SecurityFunctions.getSaltedPasswordHash(password, authenticatedUser.getRandom());
 
 				if (!authenticatedUser.getPasswordHash().equals(hashFromForm)) {
@@ -44,7 +46,9 @@ public class AuthenticationService implements Serializable{
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+
+		//FIXME awful (check ormlite for storing enums)
+		if (authenticatedUser != null) authenticatedUser.setGroup(authenticatedUser.getGroup());
 		return authenticatedUser;
 	}
 }

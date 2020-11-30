@@ -16,3 +16,4 @@ drivers/
 error-screenshots/
 webpack.generated.js
 *.db
+uploads

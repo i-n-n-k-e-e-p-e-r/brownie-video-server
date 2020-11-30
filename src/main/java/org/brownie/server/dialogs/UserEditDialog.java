@@ -14,7 +14,7 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import org.brownie.server.security.SecurityFunctions;
 
-public class UserEditDialog extends Dialog{
+public class UserEditDialog extends Dialog {
 	
 	/**
 	 * 
