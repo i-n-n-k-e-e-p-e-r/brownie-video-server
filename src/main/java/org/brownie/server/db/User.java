@@ -9,8 +9,16 @@ import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "users")
 public class User {
-    
-	public enum GROUP {
+
+    public String getRandom() {
+        return random;
+    }
+
+    public void setRandom(String random) {
+        this.random = random;
+    }
+
+    public enum GROUP {
 		ADMIN,
 		USER;
 	}
@@ -22,7 +30,9 @@ public class User {
     @DatabaseField(canBeNull = false)
     private String name;
     @DatabaseField(canBeNull = false)
-    private String password;
+    private String passwordHash;
+    @DatabaseField(canBeNull = false)
+    private String random;
     @DatabaseField(canBeNull = false)
     private Integer group;
     
@@ -32,18 +42,20 @@ public class User {
         // ORMLite needs a no-arg constructor 
     }
     
-    public User(String name, String password, GROUP group) {
+    public User(String name, String passwordHash, String random, GROUP group) {
     	this.userId = null;
         this.name = name;
-        this.password = password;
+        this.passwordHash = passwordHash;
+        this.random = random;
         this.userGroup = group;
         this.group = this.userGroup.ordinal();
     }
     
-    public User(Integer userId, String name, String password, GROUP group) {
+    public User(Integer userId, String name, String random, String password, GROUP group) {
     	this.userId = userId;
         this.name = name;
-        this.password = password;
+        this.passwordHash = passwordHash;
+        this.random = random;
         this.userGroup = group;
         this.group = this.userGroup.ordinal();
     }
@@ -57,12 +69,12 @@ public class User {
         return this;
     }
     
-    public String getPassword() {
-        return password;
+    public String getPasswordHash() {
+        return passwordHash;
     }
     
-    public User setPassword(String password) {
-        this.password = password;
+    public User setPasswordHash(String password) {
+        this.passwordHash = password;
         return this;
     }
     
@@ -83,14 +95,14 @@ public class User {
     @SuppressWarnings("unchecked")
 	public void updateUserDBData() throws SQLException {
     	((Dao<User, Integer>)DBConnectionProvider.getInstance().getOrmDaos()
-    			.get(User.class.getClass())).createOrUpdate(this);
+    			.get(User.class)).createOrUpdate(this);
     }
     
     @SuppressWarnings("unchecked")
 	public void deleteUserFromDB() {
     	try {
 			((Dao<User, Integer>)DBConnectionProvider.getInstance().getOrmDaos()
-					.get(User.class.getClass())).delete(this);
+					.get(User.class)).delete(this);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -98,7 +110,7 @@ public class User {
     
     public static boolean isUserNameFreeToUse(String userName) {
     	try {
-			return DBConnectionProvider.getInstance().getOrmDaos().get(User.class.getClass()).queryForEq("name", userName).size() == 0;
+			return DBConnectionProvider.getInstance().getOrmDaos().get(User.class).queryForEq("name", userName).size() == 0;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

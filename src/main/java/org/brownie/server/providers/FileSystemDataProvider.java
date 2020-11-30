@@ -14,17 +14,13 @@ import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataPr
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 
 public class FileSystemDataProvider extends AbstractBackEndHierarchicalDataProvider<File, FilenameFilter> {
-	
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = -421399331824343179L;
 
 	private final File root;
 
-	private static final Comparator<File> nameComparator = (fileA, fileB) -> {
-		return String.CASE_INSENSITIVE_ORDER.compare(fileA.getName(), fileB.getName());
-	};
+	private static final Comparator<File> nameComparator =
+			(fileA, fileB) -> String.CASE_INSENSITIVE_ORDER.compare(fileA.getName(), fileB.getName());
 	
 	public FileSystemDataProvider(File root) {
 		this.root = root;
@@ -40,8 +36,8 @@ public class FileSystemDataProvider extends AbstractBackEndHierarchicalDataProvi
 		final File parent = query.getParentOptional().orElse(root);
 		
 		Stream<File> filteredFiles = query.getFilter()
-				.map(filter -> Stream.of(parent.listFiles(filter)))
-				.orElse(Stream.of(parent.listFiles()))
+				.map(filter -> Stream.of(Objects.requireNonNull(parent.listFiles(filter))))
+				.orElse(Stream.of(Objects.requireNonNull(parent.listFiles())))
 				.skip(query.getOffset()).limit(query.getLimit());
 	
 		return sortFileStream(filteredFiles, query.getSortOrders());
@@ -49,7 +45,7 @@ public class FileSystemDataProvider extends AbstractBackEndHierarchicalDataProvi
 	
 	@Override
 	public boolean hasChildren(File item) {
-		return item.list() != null && item.list().length > 0;
+		return item.list() != null && Objects.requireNonNull(item.list()).length > 0;
 	}
 	
 	private Stream<File> sortFileStream(Stream<File> fileStream, List<QuerySortOrder> sortOrders) {	

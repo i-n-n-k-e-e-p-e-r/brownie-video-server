@@ -41,7 +41,6 @@ public class PlayerDialog extends Dialog {
 		closeButton.addClickListener(closeListener -> {
 			close();
 			closeButton.setEnabled(true);
-			return;
 		});
 
 		VideoJS videoPlayer = new VideoJS(UI.getCurrent().getSession(), media, poster);

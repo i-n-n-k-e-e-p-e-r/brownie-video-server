@@ -12,6 +12,7 @@ import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import org.brownie.server.security.SecurityFunctions;
 
 public class UserEditDialog extends Dialog{
 	
@@ -95,8 +96,12 @@ public class UserEditDialog extends Dialog{
 //			}
 			
 			if (!isEdit() && password.getValue().equals(repeatPassword.getValue())) {
-				User user = new User(userName.getValue(), 
-						password.getValue(), 
+				String randomSalt = SecurityFunctions.getRandomUUIDString();
+				String saltedHash = SecurityFunctions.getSaltedPasswordHash(password.getValue(), randomSalt);
+
+				User user = new User(userName.getValue(),
+						saltedHash,
+						randomSalt,
 						(isAdmin.getValue() ? User.GROUP.ADMIN : User.GROUP.USER));
 				try {
 					user.updateUserDBData();
@@ -113,9 +118,7 @@ public class UserEditDialog extends Dialog{
 		cancel.setText("Cancel");
 		cancel.setWidth("100%");
 		cancel.setDisableOnClick(true);
-		cancel.addClickListener(e -> {
-			close();
-		});
+		cancel.addClickListener(e -> close());
 		
 		buttonsLayout.add(cancel, save);
 		

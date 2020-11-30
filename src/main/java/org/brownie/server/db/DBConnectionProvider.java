@@ -84,7 +84,7 @@ public class DBConnectionProvider {
             new JdbcConnectionSource(this.connectionString);
         
         // TODO instantiate daos all tables
-        getOrmDaos().put(User.class.getClass(), DaoManager.createDao(connectionSource, User.class));
+        getOrmDaos().put(User.class, DaoManager.createDao(connectionSource, User.class));
 
         // TODO init all tables
         TableUtils.createTableIfNotExists(connectionSource, User.class);
