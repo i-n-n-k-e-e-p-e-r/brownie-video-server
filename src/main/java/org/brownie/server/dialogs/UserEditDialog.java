@@ -21,7 +21,7 @@ public class UserEditDialog extends Dialog {
 	 */
 	private static final long serialVersionUID = 5620752939841369016L;
 	
-	public static final String MIN_WIDTH = "400px";
+	public static final String MIN_WIDTH = "320px";
 	
 	
 	private boolean edit;
@@ -48,6 +48,7 @@ public class UserEditDialog extends Dialog {
 
 		Label title = new Label();
 		title.setText("Edit user");
+		title.getStyle().set("font-weight", "bold");
 		title.setWidthFull();
 		if (!isEdit()) {
 			title.setText("New user registration");

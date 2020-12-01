@@ -155,6 +155,16 @@
     		<artifactId>ormlite-jdbc</artifactId>
     		<version>5.2</version>
     	</dependency>
+        <dependency>
+            <groupId>ws.schild</groupId>
+            <artifactId>jave-all-deps</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>ws.schild</groupId>
+            <artifactId>jave-core</artifactId>
+            <version>3.0.1</version>
+        </dependency>
     </dependencies>
 
     <build>

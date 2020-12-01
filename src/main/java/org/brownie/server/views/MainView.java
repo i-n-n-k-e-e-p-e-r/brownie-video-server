@@ -86,9 +86,6 @@ public class MainView extends VerticalLayout {
 
         TreeGrid<File> treeGrid = MainViewComponents.createFilesTreeGrid();
         treeGrid.setSizeFull();
-		System.out.println(this.currentUser);
-		System.out.println(this.currentUser.getGroup());
-		System.out.println(this.currentUser.getUserGroup());
         if (this.currentUser.getGroup() == User.GROUP.ADMIN.ordinal()) {
         	MenuBar menuBar = MainViewComponents.createMenuBar();
         	menuBar.setWidthFull();

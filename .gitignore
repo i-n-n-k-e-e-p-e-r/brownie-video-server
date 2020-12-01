@@ -17,3 +17,4 @@ error-screenshots/
 webpack.generated.js
 *.db
 uploads
+media_files
