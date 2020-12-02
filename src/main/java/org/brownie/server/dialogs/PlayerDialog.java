@@ -34,8 +34,7 @@ public class PlayerDialog extends Dialog {
 		vl.setSizeFull();
 		
 		Button closeButton = new Button("Stop and close");
-		closeButton.setWidth("90%");
-		closeButton.setHeight("30px");
+		closeButton.setWidthFull();
 		
 		closeButton.setDisableOnClick(true);
 		closeButton.addClickListener(closeListener -> {

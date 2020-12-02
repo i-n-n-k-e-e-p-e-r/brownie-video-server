@@ -1,5 +1,6 @@
 package org.brownie.server.dialogs;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Label;
@@ -8,13 +9,19 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MultiFileBuffer;
+import org.brownie.server.events.EventsManager;
+import org.brownie.server.events.IEventListener;
+import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.recoder.VideoDecoder;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
-public class UploadsDialog extends Dialog {
+public class UploadsDialog extends Dialog implements IEventListener {
 
     public static final int BUFFER_SIZE = 32 * 1024;
     public static final String MIN_DIALOG_WIDTH = "320px";
@@ -45,29 +52,33 @@ public class UploadsDialog extends Dialog {
 
         Upload upload = new Upload(multiFileBuffer);
         upload.addFinishedListener(e -> multiFileBuffer.getFiles().forEach(fileName -> {
-            File newFile = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), fileName).toFile();
             try {
-                if (newFile.exists()) newFile.delete();
-                newFile.createNewFile();
-
-                InputStream in = multiFileBuffer.getInputStream(e.getFileName());
-                OutputStream out = new FileOutputStream(newFile);
-
-                byte[] data = new byte[BUFFER_SIZE];
-                while(in.read(data) > 0) {
-                    out.write(data);
+                if (subDir.getValue().trim().length() > 0) {
+                    Path pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
+                            subDir.getValue().trim());
+                    if (!pathWithSubfolder.toFile().exists() && !pathWithSubfolder.toFile().mkdir()) {
+                        return;
+                    }
                 }
-                in.close();
-                out.close();
 
-                // FIXME events and handlers for update main table needed
-                VideoDecoder.encodeFile(newFile, new File(MediaDirectories.mediaDirectory.getAbsolutePath() +
-                        File.separator + newFile.getName()));
+                File newFile = FileSystemDataProvider.getUniqueFileName(
+                        Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), fileName).toFile());
+
+                if (newFile.createNewFile()) {
+                    InputStream in = multiFileBuffer.getInputStream(e.getFileName());
+                    OutputStream out = new FileOutputStream(newFile);
+
+                    byte[] data = new byte[BUFFER_SIZE];
+                    while(in.read(data) > 0) {
+                        out.write(data);
+                    }
+                    in.close();
+                    out.close();
+
+                    VideoDecoder.getDecoder().addFileToQueue(subDir.getValue().trim(), newFile);
+                }
             } catch (IOException ioException) {
                 ioException.printStackTrace();
-            } finally {
-                //FIXME events nad handlers for capacity change needed
-                updateDiscCapacity();
             }
         }));
 
@@ -90,4 +101,19 @@ public class UploadsDialog extends Dialog {
         this.discCapacity.setText("Free " + free + "MB of " + total + "MB");
     }
 
+    @Override
+    public void update(EventsManager.EVENT_TYPE eventType, Object[] params) {
+        UI.getCurrent().getSession().access(() -> {
+            updateDiscCapacity();
+        });
+    }
+
+    @Override
+    public List<EventsManager.EVENT_TYPE> getEventTypes() {
+        ArrayList<EventsManager.EVENT_TYPE> types = new ArrayList<>();
+
+        types.add(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED);
+
+        return types;
+    }
 }

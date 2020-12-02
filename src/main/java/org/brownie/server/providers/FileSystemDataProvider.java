@@ -2,27 +2,35 @@ package org.brownie.server.providers;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
+import org.brownie.server.events.EventsManager;
+import org.brownie.server.events.IEventListener;
 
-public class FileSystemDataProvider extends AbstractBackEndHierarchicalDataProvider<File, FilenameFilter> {
+public class FileSystemDataProvider
+		extends AbstractBackEndHierarchicalDataProvider<File, FilenameFilter>
+		implements IEventListener {
 
 	private static final long serialVersionUID = -421399331824343179L;
 
 	private final File root;
+	private TreeGrid grid;
 
 	private static final Comparator<File> nameComparator =
 			(fileA, fileB) -> String.CASE_INSENSITIVE_ORDER.compare(fileA.getName(), fileB.getName());
 	
-	public FileSystemDataProvider(File root) {
+	public FileSystemDataProvider(TreeGrid grid, File root) {
+		this.grid = grid;
 		this.root = root;
 	}
 	
@@ -34,7 +42,7 @@ public class FileSystemDataProvider extends AbstractBackEndHierarchicalDataProvi
 	@Override
 	protected Stream<File> fetchChildrenFromBackEnd(HierarchicalQuery<File, FilenameFilter> query) {
 		final File parent = query.getParentOptional().orElse(root);
-		
+
 		Stream<File> filteredFiles = query.getFilter()
 				.map(filter -> Stream.of(Objects.requireNonNull(parent.listFiles(filter))))
 				.orElse(Stream.of(Objects.requireNonNull(parent.listFiles())))
@@ -52,7 +60,7 @@ public class FileSystemDataProvider extends AbstractBackEndHierarchicalDataProvi
 		if (sortOrders.isEmpty()) {
 		    return fileStream;
 		}
-		
+
 		List<Comparator<File>> comparators = sortOrders.stream()
 				.map(sortOrder -> {
 		            Comparator<File> comparator = null;
@@ -74,9 +82,45 @@ public class FileSystemDataProvider extends AbstractBackEndHierarchicalDataProvi
 		        .reduce(first, Comparator::thenComparing);
 		return fileStream.sorted(combinedComparators);
 	}
-	
-	//TODO
-	public static File getRootFile() {
-		return null;
+
+	public File getRoot() {
+		return this.root;
+	}
+
+	@Override
+	public void update(EventsManager.EVENT_TYPE eventType, Object[] params) {
+		System.out.println("UPDATE FOR " + this);
+		grid.getUI().get().access(() -> this.refreshAll());
+	}
+
+	@Override
+	public List<EventsManager.EVENT_TYPE> getEventTypes() {
+		ArrayList<EventsManager.EVENT_TYPE> types = new ArrayList<>();
+
+		types.add(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED);
+		types.add(EventsManager.EVENT_TYPE.ENCODING_STARTED);
+		types.add(EventsManager.EVENT_TYPE.ENCODING_FINISHED);
+
+		return types;
+	}
+
+	public static File getUniqueFileName(File file) {
+		if (!file.exists()) return file;
+
+		int i = file.getName().lastIndexOf('.');
+		String fileName = "";
+		if (i != -1) {
+			String extension = file.getName().substring(i + 1);
+			fileName = file.getName().substring(0, i) + " copy" + "." + extension;
+		} else {
+			fileName = file.getName() + " copy";
+		}
+
+		String dir = Paths.get(file.getAbsolutePath()).getParent().toFile().getAbsolutePath();
+		Path newPath = Paths.get(dir, fileName);
+
+		System.out.println("UNIQUE NAME " + newPath.toFile().getAbsolutePath());
+
+		return getUniqueFileName(newPath.toFile());
 	}
 }

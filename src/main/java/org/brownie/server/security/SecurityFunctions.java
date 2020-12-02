@@ -44,6 +44,10 @@ public class SecurityFunctions {
         return UUID.randomUUID().toString();
     }
 
+    public static String getClearRandomUUIDString() {
+        return UUID.randomUUID().toString().replace("-", "");
+    }
+
     public static String getSaltedPasswordHash(String password, String salt) {
         return SecurityFunctions.getSHA(salt + password,
                 ALGORITHM.SHA512);

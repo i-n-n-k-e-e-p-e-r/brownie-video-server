@@ -2,6 +2,7 @@ package org.brownie.server.views;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
@@ -9,8 +10,10 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import org.brownie.server.dialogs.PlayerDialog;
 import org.brownie.server.dialogs.UploadsDialog;
+import org.brownie.server.events.EventsManager;
 import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.providers.MediaDirectories;
+import org.brownie.server.recoder.VideoDecoder;
 
 import java.io.File;
 
@@ -32,7 +35,7 @@ public class MainViewComponents {
     public static TreeGrid createFilesTreeGrid() {
         TreeGrid<File> treeGrid = new TreeGrid<>();
 
-        treeGrid.addComponentHierarchyColumn(file -> {
+        Grid.Column<?> fileNameColumn = treeGrid.addComponentHierarchyColumn(file -> {
             HorizontalLayout value;
             if (file.isDirectory()) {
                 value = new HorizontalLayout(VaadinIcon.FOLDER.create(), new Label(file.getName()));
@@ -43,31 +46,51 @@ public class MainViewComponents {
             value.setSpacing(true);
 
             return value;
-        }).setHeader("Name").setId("file-name");
+        }).setHeader("Name");
+        fileNameColumn.setId("file-name");
+        fileNameColumn.setSortable(true);
 
-        treeGrid.addComponentColumn(file -> {
+        Grid.Column<?> playColumn = treeGrid.addComponentColumn(file -> {
             if (!file.isDirectory()) {
                 Button playButton = new Button();
                 playButton.setText("Play");
                 playButton.setIcon(VaadinIcon.PLAY.create());
-                playButton.setWidth("100px");
-                playButton.setHeight("30px");
+                playButton.setWidthFull();
                 playButton.setDisableOnClick(true);
                 playButton.addClickListener(playListener -> {
                     final PlayerDialog dialog = new PlayerDialog(file, null);
-                    dialog.setWidth("90%");
-                    dialog.setHeight("90%");
                     playButton.setEnabled(true);
                     dialog.open();
                 });
+
+                playButton.setEnabled(true);
+                if (VideoDecoder.getDecoder().isEncoding(file)) {
+                    playButton.setEnabled(false);
+                    playButton.setText("Encoding...");
+                }
+                if(!file.getAbsolutePath().endsWith("." + VideoDecoder.OUTPUT_VIDEO_FORMAT)) {
+                    playButton.setEnabled(false);
+                    playButton.setText("Not supported");
+                }
 
                 return playButton;
             }
 
             return new Label();
-        }).setHeader("...").setId("file-play");
+        }).setHeader("Actions");
+        playColumn.setId("file-play");
+        playColumn.setSortable(false);
 
-        treeGrid.setDataProvider(new FileSystemDataProvider(MediaDirectories.mediaDirectory));
+        treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
+
+        final FileSystemDataProvider provider = new FileSystemDataProvider(treeGrid, MediaDirectories.mediaDirectory);
+        treeGrid.addAttachListener(listener -> {
+            EventsManager.getManager().registerListener(provider);
+        });
+        treeGrid.addDetachListener(listener -> {
+            EventsManager.getManager().unregisterListener(provider);
+        });
+        treeGrid.setDataProvider(provider);
 
         return treeGrid;
     }
