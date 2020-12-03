@@ -89,8 +89,10 @@ public class FileSystemDataProvider
 
 	@Override
 	public void update(EventsManager.EVENT_TYPE eventType, Object[] params) {
+		//FIXME updates doesn't work
 		System.out.println("UPDATE FOR " + this);
-		grid.getUI().get().access(() -> this.refreshAll());
+		grid.getUI().get().access(this::refreshAll);
+		grid.setDataProvider(this);
 	}
 
 	@Override

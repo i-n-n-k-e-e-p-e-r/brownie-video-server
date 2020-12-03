@@ -52,6 +52,7 @@ public class MainView extends VerticalLayout {
      */
 
 	private User currentUser;
+	private TreeGrid<File> filesGrid;
 	
     public MainView(@Autowired AuthenticationService authService) {
     	DBConnectionProvider.getInstance();
@@ -84,15 +85,15 @@ public class MainView extends VerticalLayout {
 		MediaDirectories.initDirectories();
     	this.setSizeFull();
 
-        TreeGrid<File> treeGrid = MainViewComponents.createFilesTreeGrid();
-        treeGrid.setSizeFull();
+       	filesGrid = MainViewComponents.createFilesTreeGrid();
+		filesGrid.setSizeFull();
         if (this.currentUser.getGroup() == User.GROUP.ADMIN.ordinal()) {
-        	MenuBar menuBar = MainViewComponents.createMenuBar();
+        	MenuBar menuBar = MainViewComponents.createMenuBar(this);
         	menuBar.setWidthFull();
         	add(menuBar);
 		}
 
-        add(treeGrid);
+        add(filesGrid);
     }
 
 	public User getCurrentUser() {
@@ -101,5 +102,9 @@ public class MainView extends VerticalLayout {
 
 	public void setCurrentUser(User currentUser) {
 		this.currentUser = currentUser;
+	}
+
+	public TreeGrid<File> getFilesGrid() {
+    	return this.filesGrid;
 	}
 }

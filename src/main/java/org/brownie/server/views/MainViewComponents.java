@@ -1,6 +1,7 @@
 package org.brownie.server.views;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Label;
@@ -16,9 +17,11 @@ import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.recoder.VideoDecoder;
 
 import java.io.File;
+import java.util.List;
+import java.util.Objects;
 
 public class MainViewComponents {
-    public static MenuBar createMenuBar() {
+    public static MenuBar createMenuBar(MainView mainView) {
         MenuBar menuBar = new MenuBar();
 
         MenuItem file = menuBar.addItem("File");
@@ -26,13 +29,42 @@ public class MainViewComponents {
             UploadsDialog dialog = new UploadsDialog();
             dialog.open();
         });
+        file.getSubMenu().addItem("Delete", e -> {
+            if (mainView == null ||
+                    mainView.getFilesGrid() == null ||
+                    mainView.getFilesGrid().getSelectedItems().size() == 0) {
+                return;
+            }
+
+            ConfirmDialog cd = new ConfirmDialog();
+            cd.setHeader("Are you shure?");
+            cd.setText("Selected files and folders will be deleted.");
+            cd.addConfirmListener(event -> {
+                if (mainView.getFilesGrid() != null) {
+                    mainView.getFilesGrid().getSelectedItems().forEach(f -> {
+                        if (f.exists()) {
+                            if (f.isDirectory()) {
+                                List.of(Objects.requireNonNull(f.listFiles())).forEach(ff -> {
+                                    if (ff.exists()) ff.delete();
+                                });
+                            }
+                            if (f.exists()) f.delete();
+                        }
+                    });
+                }
+                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
+                cd.close();
+            });
+            cd.addRejectListener(event -> cd.close());
+            cd.open();
+        });
         menuBar.addItem("Users");
         menuBar.addItem("About");
 
         return menuBar;
     }
 
-    public static TreeGrid createFilesTreeGrid() {
+    public static TreeGrid<File> createFilesTreeGrid() {
         TreeGrid<File> treeGrid = new TreeGrid<>();
 
         Grid.Column<?> fileNameColumn = treeGrid.addComponentHierarchyColumn(file -> {
@@ -84,12 +116,8 @@ public class MainViewComponents {
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
 
         final FileSystemDataProvider provider = new FileSystemDataProvider(treeGrid, MediaDirectories.mediaDirectory);
-        treeGrid.addAttachListener(listener -> {
-            EventsManager.getManager().registerListener(provider);
-        });
-        treeGrid.addDetachListener(listener -> {
-            EventsManager.getManager().unregisterListener(provider);
-        });
+        treeGrid.addAttachListener(listener -> EventsManager.getManager().registerListener(provider));
+        treeGrid.addDetachListener(listener -> EventsManager.getManager().unregisterListener(provider));
         treeGrid.setDataProvider(provider);
 
         return treeGrid;
