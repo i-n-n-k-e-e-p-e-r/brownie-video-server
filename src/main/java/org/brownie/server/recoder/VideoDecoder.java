@@ -1,6 +1,7 @@
 package org.brownie.server.recoder;
 
-import com.vaadin.flow.component.notification.Notification;
+
+import org.brownie.server.Application;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.providers.MediaDirectories;
@@ -43,7 +44,13 @@ public class VideoDecoder {
     public synchronized void addFileToQueue(String folderName, File source) {
         Path subDirectory = Paths.get(MediaDirectories.mediaDirectory.getAbsolutePath(), folderName);
         if (!subDirectory.toFile().exists()) {
-            subDirectory.toFile().mkdir();
+            if (subDirectory.toFile().mkdir()) {
+                Application.LOGGER.log(System.Logger.Level.INFO,
+                        "Created sub directory '" + subDirectory.toFile().getAbsolutePath() + "'");
+            } else {
+                Application.LOGGER.log(System.Logger.Level.WARNING,
+                        "Can't create sub directory '" + subDirectory.toFile().getAbsolutePath() + "'");
+            }
             EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
         }
 
@@ -52,20 +59,40 @@ public class VideoDecoder {
         final File targetFile = changeExtension(uniqueFileName, OUTPUT_VIDEO_FORMAT);
 
         EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_STARTED, null);
+
         queue.add(targetFile.getAbsolutePath());
+        Application.LOGGER.log(System.Logger.Level.DEBUG,
+                "Files in queue " + queue.size() + ". Added '" + targetFile.getAbsolutePath() + "'");
 
         new Thread(() -> {
             try {
-                System.out.println("encoding START to " + targetFile.getAbsolutePath());
+                String startMsg = "Encoding STARTED to file " + targetFile.getAbsolutePath();
+                Application.LOGGER.log(System.Logger.Level.INFO, startMsg);
+
                 encodeFile(source, targetFile, false);
             } catch (IOException | EncoderException e) {
+                Application.LOGGER.log(System.Logger.Level.ERROR,
+                        "Error while encoding file '" + targetFile.getAbsolutePath() + "'", e);
                 e.printStackTrace();
             } finally {
-                if (source.exists()) source.delete();
+                if (source.exists()) {
+                    if (source.delete()) {
+                        Application.LOGGER.log(System.Logger.Level.INFO,
+                                "Uploaded file '" + source.getAbsolutePath() + "' deleted.");
+                    } else {
+                        Application.LOGGER.log(System.Logger.Level.ERROR,
+                                "Can't delete uploaded file '" + source.getAbsolutePath());
+                    }
+                }
+
                 queue.remove(targetFile.getAbsolutePath());
+                Application.LOGGER.log(System.Logger.Level.DEBUG,
+                        "Files in queue " + queue.size() + ". Removed '" + targetFile.getAbsolutePath() + "'");
+
+                String stopMsg = "Encoding STOPPED. Result file '" + targetFile.getAbsolutePath() + "'";
+                Application.LOGGER.log(System.Logger.Level.INFO, stopMsg);
 
                 EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_FINISHED, null);
-                System.out.println("encoding STOP " + targetFile.getAbsolutePath());
             }
         }).start();
     }
@@ -77,7 +104,13 @@ public class VideoDecoder {
     public static File encodeFile(@NotNull File source, @NotNull File target, boolean changeExtension) throws IOException, EncoderException {
         if (changeExtension) target = changeExtension(target, OUTPUT_VIDEO_FORMAT);
         if (!target.exists()) {
-            target.createNewFile();
+            if (target.createNewFile()) {
+                Application.LOGGER.log(System.Logger.Level.INFO,
+                        "File created '" + source.getAbsolutePath() + "'");
+            } else {
+                Application.LOGGER.log(System.Logger.Level.ERROR,
+                        "Can't create file '" + source.getAbsolutePath());
+            }
             EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
         }
 
@@ -112,6 +145,10 @@ public class VideoDecoder {
         if (i == -1) return new File(f.getAbsolutePath() + "." + newExtension);
 
         String name = f.getName().substring(0, i);
-        return new File(f.getParent(), name + "." + newExtension);
+
+        File result = new File(f.getParent(), name + "." + newExtension);
+        Application.LOGGER.log(System.Logger.Level.DEBUG,
+                "File extension changed from '" + f.getAbsolutePath() + "' to '" + result.getAbsolutePath() + "'");
+        return result;
     }
 }

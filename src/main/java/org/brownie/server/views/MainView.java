@@ -6,9 +6,11 @@ import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.login.LoginOverlay;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.PWA;
+import com.vaadin.flow.shared.communication.PushMode;
 import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
 import org.brownie.server.providers.MediaDirectories;
@@ -30,6 +32,7 @@ import java.io.File;
  * browser tab/window.
  */
 @Route
+@Push(PushMode.AUTOMATIC)
 @PWA(name = "Brownie Video Server",
         shortName = "BWS",
         description = "Simple home video server",
@@ -85,7 +88,7 @@ public class MainView extends VerticalLayout {
 		MediaDirectories.initDirectories();
     	this.setSizeFull();
 
-       	filesGrid = MainViewComponents.createFilesTreeGrid();
+       	filesGrid = MainViewComponents.createFilesTreeGrid(this);
 		filesGrid.setSizeFull();
         if (this.currentUser.getGroup() == User.GROUP.ADMIN.ordinal()) {
         	MenuBar menuBar = MainViewComponents.createMenuBar(this);

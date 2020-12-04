@@ -1,21 +1,24 @@
 package org.brownie.server.providers;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
+import org.brownie.server.Application;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.events.IEventListener;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FileSystemDataProvider
 		extends AbstractBackEndHierarchicalDataProvider<File, FilenameFilter>
@@ -24,12 +27,12 @@ public class FileSystemDataProvider
 	private static final long serialVersionUID = -421399331824343179L;
 
 	private final File root;
-	private TreeGrid grid;
+	private final TreeGrid<File> grid;
 
 	private static final Comparator<File> nameComparator =
 			(fileA, fileB) -> String.CASE_INSENSITIVE_ORDER.compare(fileA.getName(), fileB.getName());
 	
-	public FileSystemDataProvider(TreeGrid grid, File root) {
+	public FileSystemDataProvider(TreeGrid<File> grid, File root) {
 		this.grid = grid;
 		this.root = root;
 	}
@@ -89,10 +92,11 @@ public class FileSystemDataProvider
 
 	@Override
 	public void update(EventsManager.EVENT_TYPE eventType, Object[] params) {
-		//FIXME updates doesn't work
-		System.out.println("UPDATE FOR " + this);
-		grid.getUI().get().access(this::refreshAll);
-		grid.setDataProvider(this);
+		var ui = grid.getUI().isPresent() ? grid.getUI().get() : null;
+		if (ui != null) ui.getSession().access(() -> {
+			Application.LOGGER.log(System.Logger.Level.DEBUG, "Updating listener " + this);
+			this.refreshAll();
+		});
 	}
 
 	@Override
@@ -107,10 +111,14 @@ public class FileSystemDataProvider
 	}
 
 	public static File getUniqueFileName(File file) {
-		if (!file.exists()) return file;
+		if (!file.exists()) {
+			Application.LOGGER.log(System.Logger.Level.DEBUG,
+					"Generated unique file name '" + file.getAbsolutePath() + "'");
+			return file;
+		}
 
 		int i = file.getName().lastIndexOf('.');
-		String fileName = "";
+		String fileName;
 		if (i != -1) {
 			String extension = file.getName().substring(i + 1);
 			fileName = file.getName().substring(0, i) + " copy" + "." + extension;
@@ -120,8 +128,6 @@ public class FileSystemDataProvider
 
 		String dir = Paths.get(file.getAbsolutePath()).getParent().toFile().getAbsolutePath();
 		Path newPath = Paths.get(dir, fileName);
-
-		System.out.println("UNIQUE NAME " + newPath.toFile().getAbsolutePath());
 
 		return getUniqueFileName(newPath.toFile());
 	}

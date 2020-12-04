@@ -1,5 +1,7 @@
 package org.brownie.server.events;
 
+import org.brownie.server.Application;
+
 import javax.validation.constraints.NotNull;
 import java.util.*;
 
@@ -33,34 +35,27 @@ public class EventsManager {
     public void registerListener(@NotNull IEventListener listener) {
         if (listener.getEventTypes() == null || listener.getEventTypes().size() == 0) return;
 
-        listener.getEventTypes().forEach(eventType -> {
-            checkEventType(eventType);
-            listeners.get(eventType).add(listener);
-        });
+        listener.getEventTypes().forEach(eventType ->
+                listeners.computeIfAbsent(eventType,
+                        k -> Collections.synchronizedList(new ArrayList<>())).add(listener));
 
-        System.out.println("REGISTERED " + listener);
+        Application.LOGGER.log(System.Logger.Level.DEBUG, "Listener registered " + listener);
     }
 
     public void unregisterListener(@NotNull IEventListener listener) {
         if (listener.getEventTypes() == null || listener.getEventTypes().size() == 0) return;
 
-        listener.getEventTypes().forEach(eventType -> {
-            checkEventType(eventType);
-            listeners.get(eventType).remove(listener);
-        });
+        listener.getEventTypes().forEach(eventType ->
+                listeners.computeIfAbsent(eventType,
+                        k -> Collections.synchronizedList(new ArrayList<>())).remove(listener));
 
-        System.out.println("UNREGISTERED " + listener);
+        Application.LOGGER.log(System.Logger.Level.DEBUG, "Listener unregistered " + listener);
     }
 
     public void notifyAllListeners(EVENT_TYPE eventType, Object[] params) {
-        new Thread(() -> {
-            checkEventType(eventType);
-            listeners.get(eventType).parallelStream().forEach(listener -> listener.update(eventType, params));
-        }).start();
+        Application.LOGGER.log(System.Logger.Level.DEBUG, "Notify all listeners");
+        new Thread(() -> listeners.computeIfAbsent(eventType,
+                k -> Collections.synchronizedList(new ArrayList<>()))
+                .parallelStream().forEach(listener -> listener.update(eventType, params))).start();
     }
-
-    private void checkEventType(EVENT_TYPE eventType) {
-        listeners.computeIfAbsent(eventType, k -> Collections.synchronizedList(new ArrayList<>()));
-    }
-
 }

@@ -9,6 +9,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MultiFileBuffer;
+import org.brownie.server.Application;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.events.IEventListener;
 import org.brownie.server.providers.FileSystemDataProvider;
@@ -57,6 +58,8 @@ public class UploadsDialog extends Dialog implements IEventListener {
                     Path pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
                             subDir.getValue().trim());
                     if (!pathWithSubfolder.toFile().exists() && !pathWithSubfolder.toFile().mkdir()) {
+                        Application.LOGGER.log(System.Logger.Level.ERROR,
+                                "Can't locate or create file for upload '" + pathWithSubfolder.toFile() + "'");
                         return;
                     }
                 }
@@ -74,19 +77,30 @@ public class UploadsDialog extends Dialog implements IEventListener {
                     }
                     in.close();
                     out.close();
+                    Application.LOGGER.log(System.Logger.Level.INFO,
+                            "New file uploaded '" + newFile.getAbsolutePath() + "'");
 
                     VideoDecoder.getDecoder().addFileToQueue(subDir.getValue().trim(), newFile);
+                } else {
+                    Application.LOGGER.log(System.Logger.Level.ERROR,
+                            "Can't create new file '" + newFile.getAbsolutePath() + "'");
                 }
             } catch (IOException ioException) {
+                Application.LOGGER.log(System.Logger.Level.ERROR,
+                        "Error while uploading or processing files", ioException);
                 ioException.printStackTrace();
             }
         }));
 
-        Button close = new Button("Close", e -> close());
+        Button close = new Button("Close", e -> {
+            EventsManager.getManager().unregisterListener(this);
+            close();
+        });
         close.setWidthFull();
         mainLayout.add(upload, close);
 
         add(mainLayout);
+        EventsManager.getManager().registerListener(this);
 
         this.setCloseOnEsc(true);
         this.setCloseOnOutsideClick(true);
@@ -98,14 +112,17 @@ public class UploadsDialog extends Dialog implements IEventListener {
     public void updateDiscCapacity() {
         long total = new File("/").getTotalSpace() / (1024 * 1024);
         long free = new File("/").getUsableSpace() / (1024 * 1024);
-        this.discCapacity.setText("Free " + free + "MB of " + total + "MB");
+        String discCapacityText = "Free " + free + "MB of " + total + "MB";
+        this.discCapacity.setText(discCapacityText);
+
+        Application.LOGGER.log(System.Logger.Level.DEBUG,
+                "Updated disc capacity '" + discCapacityText + "'");
     }
 
     @Override
     public void update(EventsManager.EVENT_TYPE eventType, Object[] params) {
-        UI.getCurrent().getSession().access(() -> {
-            updateDiscCapacity();
-        });
+        var ui = this.getUI().isPresent() ? this.getUI().get() : null;
+        if (ui != null) ui.getSession().access(() -> this.updateDiscCapacity());
     }
 
     @Override

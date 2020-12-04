@@ -19,6 +19,8 @@ public class Application extends SpringBootServletInitializer {
     public static final long MAX_UPLOAD_FILE_SIZE = 20480000000L;
     public static final long MAX_REQUEST_SIZE = 20480000000L;
 
+    public static final System.Logger LOGGER = System.getLogger("Brownie server");
+
     public static void main(String[] args) {
     	SpringApplication.run(Application.class, args);
     }

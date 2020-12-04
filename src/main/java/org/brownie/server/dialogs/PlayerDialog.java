@@ -8,6 +8,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import org.brownie.server.Application;
+import org.brownie.server.views.MainView;
 
 public class PlayerDialog extends Dialog {
 
@@ -19,7 +21,7 @@ public class PlayerDialog extends Dialog {
 	private File media;
 	private File poster;
 	
-	public PlayerDialog(File media, File poster) {
+	public PlayerDialog(File media, File poster, MainView mainView) {
 		super();
 		
 		setModal(true);
@@ -38,11 +40,16 @@ public class PlayerDialog extends Dialog {
 		
 		closeButton.setDisableOnClick(true);
 		closeButton.addClickListener(closeListener -> {
+			Application.LOGGER.log(System.Logger.Level.DEBUG,
+					"Player closed " + this.hashCode() + ". User " + mainView.getCurrentUser().getName() + ".");
 			close();
 			closeButton.setEnabled(true);
 		});
 
 		VideoJS videoPlayer = new VideoJS(UI.getCurrent().getSession(), media, poster);
+		Application.LOGGER.log(System.Logger.Level.DEBUG,
+				"New player " + this.hashCode() + " for user " + mainView.getCurrentUser().getName() + ".");
+
 		videoPlayer.setHeight("90%");
 		vl.add(videoPlayer);
 		vl.add(closeButton);

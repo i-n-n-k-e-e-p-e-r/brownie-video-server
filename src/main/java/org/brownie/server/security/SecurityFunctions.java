@@ -49,7 +49,9 @@ public class SecurityFunctions {
     }
 
     public static String getSaltedPasswordHash(String password, String salt) {
-        return SecurityFunctions.getSHA(salt + password,
-                ALGORITHM.SHA512);
+        String beginning = salt.substring(0, salt.length() / 2);
+        String ending = salt.substring(salt.length() / 2);
+
+        return SecurityFunctions.getSHA(beginning + password + ending, ALGORITHM.SHA512);
     }
 }
