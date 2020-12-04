@@ -54,8 +54,9 @@ public class UploadsDialog extends Dialog implements IEventListener {
         Upload upload = new Upload(multiFileBuffer);
         upload.addFinishedListener(e -> multiFileBuffer.getFiles().forEach(fileName -> {
             try {
+                Path pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath());
                 if (subDir.getValue().trim().length() > 0) {
-                    Path pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
+                    pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
                             subDir.getValue().trim());
                     if (!pathWithSubfolder.toFile().exists() && !pathWithSubfolder.toFile().mkdir()) {
                         Application.LOGGER.log(System.Logger.Level.ERROR,
@@ -64,8 +65,11 @@ public class UploadsDialog extends Dialog implements IEventListener {
                     }
                 }
 
+                Application.LOGGER.log(System.Logger.Level.INFO,
+                        "Uploading to '" + pathWithSubfolder.toFile().getAbsolutePath() + "'");
+
                 File newFile = FileSystemDataProvider.getUniqueFileName(
-                        Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), fileName).toFile());
+                        Paths.get(pathWithSubfolder.toFile().getAbsolutePath(), fileName).toFile());
 
                 if (newFile.createNewFile()) {
                     InputStream in = multiFileBuffer.getInputStream(e.getFileName());

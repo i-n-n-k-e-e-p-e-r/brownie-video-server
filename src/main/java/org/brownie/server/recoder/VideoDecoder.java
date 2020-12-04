@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class VideoDecoder {
     public static final String OUTPUT_VIDEO_FORMAT = "mp4";
@@ -55,13 +56,13 @@ public class VideoDecoder {
         }
 
         File uniqueFileName = FileSystemDataProvider.getUniqueFileName(
-                Paths.get(MediaDirectories.mediaDirectory.getAbsolutePath(), source.getName()).toFile());
+                Paths.get(subDirectory.toFile().getAbsolutePath(), source.getName()).toFile());
         final File targetFile = changeExtension(uniqueFileName, OUTPUT_VIDEO_FORMAT);
 
         EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_STARTED, null);
 
         queue.add(targetFile.getAbsolutePath());
-        Application.LOGGER.log(System.Logger.Level.DEBUG,
+        Application.LOGGER.log(System.Logger.Level.INFO,
                 "Files in queue " + queue.size() + ". Added '" + targetFile.getAbsolutePath() + "'");
 
         new Thread(() -> {
@@ -85,8 +86,22 @@ public class VideoDecoder {
                     }
                 }
 
+                if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().exists() &&
+                        Objects.requireNonNull(Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
+                                folderName).toFile().listFiles()).length == 0) {
+                    if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().delete()) {
+                        Application.LOGGER.log(System.Logger.Level.INFO,
+                                "Folder deleted '" +
+                                        Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
+                    } else {
+                        Application.LOGGER.log(System.Logger.Level.ERROR,
+                                "Can't delete folder '" +
+                                        Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
+                    }
+                }
+
                 queue.remove(targetFile.getAbsolutePath());
-                Application.LOGGER.log(System.Logger.Level.DEBUG,
+                Application.LOGGER.log(System.Logger.Level.INFO,
                         "Files in queue " + queue.size() + ". Removed '" + targetFile.getAbsolutePath() + "'");
 
                 String stopMsg = "Encoding STOPPED. Result file '" + targetFile.getAbsolutePath() + "'";
