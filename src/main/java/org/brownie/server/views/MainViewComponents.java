@@ -13,6 +13,7 @@ import org.brownie.server.Application;
 import org.brownie.server.db.User;
 import org.brownie.server.dialogs.PlayerDialog;
 import org.brownie.server.dialogs.UploadsDialog;
+import org.brownie.server.dialogs.UsersDialog;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.providers.MediaDirectories;
@@ -76,7 +77,10 @@ public class MainViewComponents {
             cd.addRejectListener(event -> cd.close());
             cd.open();
         });
-        menuBar.addItem("Users");
+        menuBar.addItem("Users", e -> {
+            UsersDialog usersDialog = new UsersDialog();
+            usersDialog.open();
+        });
         menuBar.addItem("About");
 
         return menuBar;
@@ -132,7 +136,7 @@ public class MainViewComponents {
         playColumn.setSortable(false);
 
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
-        if (mainView.getCurrentUser().getUserGroup() == User.GROUP.USER)
+        if (mainView.getCurrentUser().getGroup() == User.GROUP.USER.ordinal())
             treeGrid.setSelectionMode(Grid.SelectionMode.NONE);
 
         final FileSystemDataProvider provider = new FileSystemDataProvider(treeGrid, MediaDirectories.mediaDirectory);

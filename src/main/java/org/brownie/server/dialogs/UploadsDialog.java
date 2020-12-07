@@ -1,6 +1,5 @@
 package org.brownie.server.dialogs;
 
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Label;
@@ -50,51 +49,8 @@ public class UploadsDialog extends Dialog implements IEventListener {
         mainLayout.add(title, discCapacity, subDir);
 
         MultiFileBuffer multiFileBuffer = new MultiFileBuffer();
-
         Upload upload = new Upload(multiFileBuffer);
-        upload.addFinishedListener(e -> multiFileBuffer.getFiles().forEach(fileName -> {
-            try {
-                Path pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath());
-                if (subDir.getValue().trim().length() > 0) {
-                    pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
-                            subDir.getValue().trim());
-                    if (!pathWithSubfolder.toFile().exists() && !pathWithSubfolder.toFile().mkdir()) {
-                        Application.LOGGER.log(System.Logger.Level.ERROR,
-                                "Can't locate or create file for upload '" + pathWithSubfolder.toFile() + "'");
-                        return;
-                    }
-                }
-
-                Application.LOGGER.log(System.Logger.Level.INFO,
-                        "Uploading to '" + pathWithSubfolder.toFile().getAbsolutePath() + "'");
-
-                File newFile = FileSystemDataProvider.getUniqueFileName(
-                        Paths.get(pathWithSubfolder.toFile().getAbsolutePath(), fileName).toFile());
-
-                if (newFile.createNewFile()) {
-                    InputStream in = multiFileBuffer.getInputStream(e.getFileName());
-                    OutputStream out = new FileOutputStream(newFile);
-
-                    byte[] data = new byte[BUFFER_SIZE];
-                    while(in.read(data) > 0) {
-                        out.write(data);
-                    }
-                    in.close();
-                    out.close();
-                    Application.LOGGER.log(System.Logger.Level.INFO,
-                            "New file uploaded '" + newFile.getAbsolutePath() + "'");
-
-                    VideoDecoder.getDecoder().addFileToQueue(subDir.getValue().trim(), newFile);
-                } else {
-                    Application.LOGGER.log(System.Logger.Level.ERROR,
-                            "Can't create new file '" + newFile.getAbsolutePath() + "'");
-                }
-            } catch (IOException ioException) {
-                Application.LOGGER.log(System.Logger.Level.ERROR,
-                        "Error while uploading or processing files", ioException);
-                ioException.printStackTrace();
-            }
-        }));
+        upload.addFinishedListener(e -> processFile(subDir.getValue(), e.getFileName(), multiFileBuffer));
 
         Button close = new Button("Close", e -> {
             EventsManager.getManager().unregisterListener(this);
@@ -113,6 +69,50 @@ public class UploadsDialog extends Dialog implements IEventListener {
         this.setSizeUndefined();
     }
 
+    private void processFile(String subDir, String uploadedFileName, MultiFileBuffer multiFileBuffer) {
+        try {
+            Path pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath());
+            if (subDir.trim().length() > 0) {
+                pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
+                        subDir.trim());
+                if (!pathWithSubfolder.toFile().exists() && !pathWithSubfolder.toFile().mkdir()) {
+                    Application.LOGGER.log(System.Logger.Level.ERROR,
+                            "Can't locate or create file for upload '" + pathWithSubfolder.toFile() + "'");
+                    return;
+                }
+            }
+
+            Application.LOGGER.log(System.Logger.Level.INFO,
+                    "Uploading to '" + pathWithSubfolder.toFile().getAbsolutePath() + "'");
+
+            File newFile = FileSystemDataProvider.getUniqueFileName(
+                    Paths.get(pathWithSubfolder.toFile().getAbsolutePath(), uploadedFileName).toFile());
+
+            if (newFile.createNewFile()) {
+                InputStream in = multiFileBuffer.getInputStream(uploadedFileName);
+                OutputStream out = new FileOutputStream(newFile);
+
+                byte[] data = new byte[BUFFER_SIZE];
+                while(in.read(data) > 0) {
+                    out.write(data);
+                }
+                in.close();
+                out.close();
+                Application.LOGGER.log(System.Logger.Level.INFO,
+                        "New file uploaded '" + newFile.getAbsolutePath() + "'");
+
+                VideoDecoder.getDecoder().addFileToQueue(subDir.trim(), newFile);
+            } else {
+                Application.LOGGER.log(System.Logger.Level.ERROR,
+                        "Can't create new file '" + newFile.getAbsolutePath() + "'");
+            }
+        } catch (IOException ioException) {
+            Application.LOGGER.log(System.Logger.Level.ERROR,
+                    "Error while uploading or processing files", ioException);
+            ioException.printStackTrace();
+        }
+    }
+
     public void updateDiscCapacity() {
         long total = new File("/").getTotalSpace() / (1024 * 1024);
         long free = new File("/").getUsableSpace() / (1024 * 1024);
@@ -126,7 +126,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
     @Override
     public void update(EventsManager.EVENT_TYPE eventType, Object[] params) {
         var ui = this.getUI().isPresent() ? this.getUI().get() : null;
-        if (ui != null) ui.getSession().access(() -> this.updateDiscCapacity());
+        if (ui != null) ui.getSession().access(() -> updateDiscCapacity());
     }
 
     @Override

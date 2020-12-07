@@ -20,7 +20,7 @@ public class User {
 
     public enum GROUP {
 		ADMIN,
-		USER;
+		USER
 	}
 	
     @DatabaseField(generatedId = true, 
@@ -36,26 +36,24 @@ public class User {
     @DatabaseField(canBeNull = false)
     private Integer group;
     
-    private GROUP userGroup;
-    
     public User() {
         // ORMLite needs a no-arg constructor
     }
     
-    public User(String name, String passwordHash, String random, GROUP userGroup) {
+    public User(String name, String passwordHash, String random, Integer group) {
     	this.userId = null;
         this.name = name;
         this.passwordHash = passwordHash;
         this.random = random;
-        this.setUserGroup(userGroup);
+        this.group = group;
     }
     
-    public User(Integer userId, String name, String random, String passwordHash, GROUP userGroup) {
+    public User(Integer userId, String name, String random, String passwordHash, Integer group) {
     	this.userId = userId;
         this.name = name;
         this.passwordHash = passwordHash;
         this.random = random;
-        this.setUserGroup(userGroup);
+        this.group = group;
     }
     
     public String getName() {
@@ -76,35 +74,15 @@ public class User {
         return this;
     }
 
-    public User setUserGroup(GROUP userGroup) {
-        this.userGroup = userGroup;
-        this.group = userGroup.ordinal();
-        return this;
-    }
-
-    public GROUP getUserGroup() {
-    	return this.userGroup;
-    }
-
     public User setGroup(Integer group) {
         this.group = group;
-        switch(group) {
-            case 0: {
-                this.userGroup = GROUP.ADMIN;
-                break;
-            }
-            case 1: {
-                this.userGroup = GROUP.USER;
-                break;
-            }
-        }
         return this;
     }
 
     public Integer getGroup() {
-        return this.group;
+    	return this.group;
     }
-    
+
     public Integer getUserId() {
     	return this.userId;
     }

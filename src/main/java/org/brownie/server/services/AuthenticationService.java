@@ -58,9 +58,6 @@ public class AuthenticationService implements Serializable{
 		} else {
 			Application.LOGGER.log(System.Logger.Level.INFO,
 					"Authentication SUCCEED for user '" + userName + "'");
-
-			//FIXME awful (check ormlite for storing enums)
-			authenticatedUser.setGroup(authenticatedUser.getGroup());
 		}
 		return authenticatedUser;
 	}

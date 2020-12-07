@@ -42,6 +42,7 @@ public class VideoDecoder {
         return decoder;
     }
 
+    //FIXME treads pool or streams needed
     public synchronized void addFileToQueue(String folderName, File source) {
         Path subDirectory = Paths.get(MediaDirectories.mediaDirectory.getAbsolutePath(), folderName);
         if (!subDirectory.toFile().exists()) {
