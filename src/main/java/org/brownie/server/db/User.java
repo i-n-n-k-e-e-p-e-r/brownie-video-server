@@ -5,6 +5,8 @@ import java.sql.SQLException;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import org.brownie.server.Application;
+import org.springframework.context.ApplicationEventPublisherAware;
 
 
 @DatabaseTable(tableName = "users")
@@ -111,5 +113,19 @@ public class User {
 		}
     	
     	return false;
+    }
+
+    public static long getAdminsCount() {
+        long count = 0;
+        try {
+            count = DBConnectionProvider.getInstance().getOrmDaos().get(User.class)
+                    .queryBuilder().where().eq("group", User.GROUP.ADMIN.ordinal()).countOf();
+        } catch (SQLException e) {
+            Application.LOGGER.log(System.Logger.Level.ERROR,
+                    "Error while getting users count in " + User.class + " in getAdminsCount", e);
+            e.printStackTrace();
+        }
+
+        return count;
     }
 }

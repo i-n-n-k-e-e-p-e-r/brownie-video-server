@@ -24,9 +24,9 @@ public class AuthenticationService implements Serializable{
 		User authenticatedUser = null;
 		
 		try {
-			if (DBConnectionProvider.getInstance().getOrmDaos().get(User.class).countOf() == 0) {
+			if (User.getAdminsCount() == 0) {
 				Application.LOGGER.log(System.Logger.Level.WARNING,
-						"Need to create very first user!");
+						"Need to create very first admin user!");
 
 				UserEditDialog newUserDialog = new UserEditDialog(false);
 				newUserDialog.setWidth(UserEditDialog.MIN_WIDTH);

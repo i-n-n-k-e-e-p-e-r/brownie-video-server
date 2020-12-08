@@ -149,6 +149,11 @@ public class UserEditDialog extends Dialog {
 			userName.setValue(getUser().getName());
 			isAdmin.setValue(getUser().getGroup() == User.GROUP.ADMIN.ordinal());
 		}
+
+		if (User.getAdminsCount() == 0) {
+			isAdmin.setValue(true);
+			isAdmin.setEnabled(false);
+		}
 	}
 
 	private boolean checkInput(TextField userName,

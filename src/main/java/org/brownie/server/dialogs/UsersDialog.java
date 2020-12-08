@@ -1,6 +1,5 @@
 package org.brownie.server.dialogs;
 
-import com.vaadin.flow.component.charts.model.HorizontalAlign;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
