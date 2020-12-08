@@ -12,6 +12,7 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import org.brownie.server.Application;
 import org.brownie.server.db.User;
 import org.brownie.server.dialogs.PlayerDialog;
+import org.brownie.server.dialogs.SystemLoadDialog;
 import org.brownie.server.dialogs.UploadsDialog;
 import org.brownie.server.dialogs.UsersDialog;
 import org.brownie.server.events.EventsManager;
@@ -81,7 +82,9 @@ public class MainViewComponents {
             UsersDialog usersDialog = new UsersDialog();
             usersDialog.open();
         });
-        menuBar.addItem("About");
+        menuBar.addItem("System information", e -> {
+            SystemLoadDialog.showSystemLoadDialog();
+        });
 
         return menuBar;
     }
