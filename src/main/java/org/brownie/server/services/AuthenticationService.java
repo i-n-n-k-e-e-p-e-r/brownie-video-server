@@ -12,7 +12,7 @@ import org.brownie.server.security.SecurityFunctions;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AuthenticationService implements Serializable{
+public class AuthenticationService implements Serializable {
 
 	
 	/**

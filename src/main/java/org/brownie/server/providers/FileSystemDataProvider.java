@@ -1,5 +1,7 @@
 package org.brownie.server.providers;
 
+import com.vaadin.flow.component.grid.GridSortOrder;
+import com.vaadin.flow.component.grid.SortOrderProvider;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -19,10 +21,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class FileSystemDataProvider
 		extends AbstractBackEndHierarchicalDataProvider<File, FilenameFilter>
-		implements IEventListener {
+		implements IEventListener, SortOrderProvider {
 
 	private static final long serialVersionUID = -421399331824343179L;
 
@@ -45,7 +48,11 @@ public class FileSystemDataProvider
 	@Override
 	protected Stream<File> fetchChildrenFromBackEnd(HierarchicalQuery<File, FilenameFilter> query) {
 		final File parent = query.getParentOptional().orElse(root);
-
+		if ((parent.listFiles() == null || parent.listFiles().length == 0)
+				|| ((query.getFilter().isPresent() && parent.listFiles(query.getFilter().get()) == null)
+				|| (query.getFilter().isPresent() && parent.listFiles(query.getFilter().get()).length == 0))) {
+			return sortFileStream(new ArrayList<File>().stream(), query.getSortOrders());
+		}
 		Stream<File> filteredFiles = query.getFilter()
 				.map(filter -> Stream.of(Objects.requireNonNull(parent.listFiles(filter))))
 				.orElse(Stream.of(Objects.requireNonNull(parent.listFiles())))
@@ -130,5 +137,16 @@ public class FileSystemDataProvider
 		Path newPath = Paths.get(dir, fileName);
 
 		return getUniqueFileName(newPath.toFile());
+	}
+
+	@Override
+	public Stream<QuerySortOrder> apply(SortDirection sortDirection) {
+		String fieldId = grid.getColumns().get(0).getId().isPresent() ? grid.getColumns().get(0).getId().get() : "";
+
+		QuerySortOrder order = new QuerySortOrder(fieldId, sortDirection);
+		List<QuerySortOrder> result = new ArrayList<>();
+		result.add(order);
+
+		return result.stream();
 	}
 }

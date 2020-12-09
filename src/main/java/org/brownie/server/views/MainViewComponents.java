@@ -4,11 +4,16 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridSortOrder;
+import com.vaadin.flow.component.grid.SortOrderProvider;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.data.provider.QuerySortOrder;
+import com.vaadin.flow.data.provider.SortDirection;
+import com.vaadin.flow.function.ValueProvider;
 import org.brownie.server.Application;
 import org.brownie.server.db.User;
 import org.brownie.server.dialogs.PlayerDialog;
@@ -21,8 +26,11 @@ import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.recoder.VideoDecoder;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class MainViewComponents {
     public static MenuBar createMenuBar(MainView mainView) {
@@ -143,9 +151,13 @@ public class MainViewComponents {
             treeGrid.setSelectionMode(Grid.SelectionMode.NONE);
 
         final FileSystemDataProvider provider = new FileSystemDataProvider(treeGrid, MediaDirectories.mediaDirectory);
+        // register for receiving updates from other UIs
         treeGrid.addAttachListener(listener -> EventsManager.getManager().registerListener(provider));
         treeGrid.addDetachListener(listener -> EventsManager.getManager().unregisterListener(provider));
         treeGrid.setDataProvider(provider);
+        fileNameColumn.setSortOrderProvider(provider);
+        treeGrid.sort(Collections.singletonList(new GridSortOrder<>(treeGrid.getColumns().get(0),
+                SortDirection.ASCENDING)));
 
         return treeGrid;
     }

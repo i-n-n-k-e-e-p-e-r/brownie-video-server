@@ -1,6 +1,7 @@
 package org.brownie.server.views;
 
 import com.brownie.videojs.VideoJS;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.login.LoginOverlay;
@@ -11,6 +12,7 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.shared.communication.PushMode;
+import org.brownie.server.Application;
 import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
 import org.brownie.server.providers.MediaDirectories;
@@ -51,16 +53,21 @@ public class MainView extends VerticalLayout {
      * <p>
      * Build the initial UI state for the user accessing the application.
      *
-     * @param service The message service. Automatically injected Spring managed bean.
+     * @param authService The auth service. Automatically injected Spring managed bean.
      */
 
 	private User currentUser;
 	private TreeGrid<File> filesGrid;
 	
     public MainView(@Autowired AuthenticationService authService) {
+    	// no timeout users session
+		UI.getCurrent().getSession().getSession().setMaxInactiveInterval(-1);
+
+    	// create DB and tables
     	DBConnectionProvider.getInstance();
+    	// init file dynamic resources map
     	VideoJS.getResourcesRegistrations();
-    	
+
     	LoginOverlay login = new LoginOverlay();
     	login.addLoginListener(e -> {
     		this.currentUser = authService.getValidUser(e.getUsername(), e.getPassword());
@@ -110,4 +117,5 @@ public class MainView extends VerticalLayout {
 	public TreeGrid<File> getFilesGrid() {
     	return this.filesGrid;
 	}
+
 }

@@ -1,5 +1,8 @@
 package org.brownie.server.dialogs;
 
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
@@ -90,13 +93,14 @@ public class UsersDialog extends Dialog {
         title.getStyle().set("font-weight", "bold");
         titleLayout.add(title);
 
-        MenuBar menu = new MenuBar();
-        menu.addItem("New", e -> openNewDialog(usersGrid));
-        menu.addItem("Edit", e -> openEditDialog(usersGrid));
-        menu.addItem("Delete", e -> openDeleteDialog(usersGrid));
-        menu.addItem("Close", e -> close());
-        menu.setSizeUndefined();
-        mainLayout.setAlignItems(FlexComponent.Alignment.START);
+        HorizontalLayout menuLayout = new HorizontalLayout();
+        menuLayout.setWidthFull();
+        menuLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        menuLayout.add(
+                getMenuButton("New", e -> openNewDialog(usersGrid)),
+                getMenuButton("Edit", e -> openEditDialog(usersGrid)),
+                getMenuButton("Delete", e -> openDeleteDialog(usersGrid))
+        );
 
         usersGrid.setItems(users);
         Grid.Column<?> usersColumn = usersGrid.addColumn(User::getName);
@@ -111,11 +115,22 @@ public class UsersDialog extends Dialog {
         usersGrid.setSizeFull();
         usersGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
-        mainLayout.add(titleLayout, menu, usersGrid);
+        Button closeButton = new Button("Close");
+        closeButton.setWidthFull();
+        closeButton.addClickListener(e -> close());
+        mainLayout.add(titleLayout, menuLayout, usersGrid, getMenuButton("close", e -> close()));
 
         mainLayout.setSizeFull();
         mainLayout.setSpacing(true);
         add(mainLayout);
+    }
+
+    private Button getMenuButton(String text, ComponentEventListener<ClickEvent<Button>> listener) {
+        Button button = new Button(text);
+        button.setWidthFull();
+        button.addClickListener(listener);
+
+        return button;
     }
 
     private void openNewDialog(Grid<User> usersGrid) {
@@ -150,6 +165,8 @@ public class UsersDialog extends Dialog {
         confirmDialog.addConfirmListener(confirmed -> {
             User user = usersGrid.getSelectedItems().iterator().next();
             user.deleteUserFromDB();
+            Application.LOGGER.log(System.Logger.Level.INFO,
+                    "Deleted user '" + user.getName() + "'");
             updateUsers();
         });
         confirmDialog.open();
