@@ -7,7 +7,6 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Label;
-import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -115,10 +114,7 @@ public class UsersDialog extends Dialog {
         usersGrid.setSizeFull();
         usersGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
-        Button closeButton = new Button("Close");
-        closeButton.setWidthFull();
-        closeButton.addClickListener(e -> close());
-        mainLayout.add(titleLayout, menuLayout, usersGrid, getMenuButton("close", e -> close()));
+        mainLayout.add(titleLayout, menuLayout, usersGrid, getMenuButton("Close", e -> close()));
 
         mainLayout.setSizeFull();
         mainLayout.setSpacing(true);

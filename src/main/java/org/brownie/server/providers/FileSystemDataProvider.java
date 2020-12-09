@@ -1,6 +1,5 @@
 package org.brownie.server.providers;
 
-import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.grid.SortOrderProvider;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.QuerySortOrder;
@@ -21,7 +20,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class FileSystemDataProvider
 		extends AbstractBackEndHierarchicalDataProvider<File, FilenameFilter>
@@ -32,8 +30,17 @@ public class FileSystemDataProvider
 	private final File root;
 	private final TreeGrid<File> grid;
 
-	private static final Comparator<File> nameComparator =
-			(fileA, fileB) -> String.CASE_INSENSITIVE_ORDER.compare(fileA.getName(), fileB.getName());
+	private static final Comparator<File> fileComparator = (fileA, fileB) -> {
+		if ((!fileA.isDirectory() && !fileB.isDirectory()) || (fileA.isDirectory() && fileB.isDirectory())) {
+			return String.CASE_INSENSITIVE_ORDER.compare(fileA.getName(), fileB.getName());
+		} else {
+			if (fileA.isDirectory() && !fileB.isDirectory()) {
+				return -1;
+			} else {
+				return 1;
+			}
+		}
+	};
 	
 	public FileSystemDataProvider(TreeGrid<File> grid, File root) {
 		this.grid = grid;
@@ -75,7 +82,7 @@ public class FileSystemDataProvider
 				.map(sortOrder -> {
 		            Comparator<File> comparator = null;
 		            if (sortOrder.getSorted().equals("file-name")) {
-		                comparator = nameComparator;
+		                comparator = fileComparator;
 		            }
 		            if (comparator != null && sortOrder.getDirection() == SortDirection.DESCENDING) {
 		                comparator = comparator.reversed();
