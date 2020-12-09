@@ -107,15 +107,19 @@ public class VideoDecoder {
         video.setCodec("h264");
 
         video.setX264Profile(X264_PROFILE.BASELINE);
+
+        MultimediaObject sourceMediaObject = new MultimediaObject(source);
+
+        video.setSize(new VideoSize(sourceMediaObject.getInfo().getVideo().getSize().getWidth(),
+                sourceMediaObject.getInfo().getVideo().getSize().getHeight()));
         video.setFrameRate(30);
-        video.setSize(new VideoSize(1280, 720));
 
         EncodingAttributes attrs = new EncodingAttributes();
         attrs.setOutputFormat(OUTPUT_VIDEO_FORMAT);
         attrs.setAudioAttributes(audio);
         attrs.setVideoAttributes(video);
 
-        encoder.encode(new MultimediaObject(source), target, attrs);
+        encoder.encode(sourceMediaObject, target, attrs);
 
         return target;
     }
