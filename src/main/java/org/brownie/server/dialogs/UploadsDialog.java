@@ -3,6 +3,7 @@ package org.brownie.server.dialogs;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -24,7 +25,6 @@ import java.util.List;
 public class UploadsDialog extends Dialog implements IEventListener {
 
     public static final int BUFFER_SIZE = 32 * 1024;
-    public static final String MIN_DIALOG_WIDTH = "320px";
 
     private final Label discCapacity = new Label("");
 
@@ -56,6 +56,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
             EventsManager.getManager().unregisterListener(this);
             close();
         });
+        close.setIcon(VaadinIcon.CLOSE_CIRCLE.create());
         close.setWidthFull();
         mainLayout.add(upload, close);
 

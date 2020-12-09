@@ -5,6 +5,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import org.brownie.server.Application;
 
 import java.io.File;
@@ -17,7 +19,10 @@ public class SystemLoadDialog extends Dialog {
     public static final String DISC_USAGE_FORMAT = "Free disc space: %.2f/%.2f GB";
 
     private final OperatingSystemMXBean monitor = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+    private final Label name = new Label("Brownie video server");
     private final Label version = new Label("Version: N/A");
+    private final Label author = new Label("by Vladimir Senchikhin");
+    private final Label license = new Label("License: Apache 2.0");
     private final Label cpuLoad = new Label("CPU load: N/A");
     private final Label memoryUsage = new Label("Memory usage: N/A");
     private final Label discUsage = new Label("Free disc space: N/A");
@@ -36,15 +41,19 @@ public class SystemLoadDialog extends Dialog {
         title.getStyle().set("font-weight", "bold");
         Button closeButton = new Button();
         closeButton.setText("Close");
+        closeButton.setIcon(VaadinIcon.CLOSE_CIRCLE.create());
         closeButton.addClickListener(e -> this.close());
         closeButton.setWidthFull();
 
         version.setText("Server version: " + this.getClass().getPackage().getImplementationVersion());
         mainLayout.add(title,
-                version,
                 cpuLoad,
                 memoryUsage,
                 discUsage,
+                name,
+                author,
+                version,
+                license,
                 closeButton);
 
         mainLayout.setSizeFull();

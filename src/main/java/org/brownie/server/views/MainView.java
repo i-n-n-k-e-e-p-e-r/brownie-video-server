@@ -12,7 +12,6 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.shared.communication.PushMode;
-import org.brownie.server.Application;
 import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
 import org.brownie.server.providers.MediaDirectories;
@@ -97,11 +96,10 @@ public class MainView extends VerticalLayout {
 
        	filesGrid = MainViewComponents.createFilesTreeGrid(this);
 		filesGrid.setSizeFull();
-        if (this.currentUser.getGroup() == User.GROUP.ADMIN.ordinal()) {
-        	MenuBar menuBar = MainViewComponents.createMenuBar(this);
-        	menuBar.setWidthFull();
-        	add(menuBar);
-		}
+
+		MenuBar menuBar = MainViewComponents.createMenuBar(this);
+		menuBar.setWidthFull();
+		add(menuBar);
 
         add(filesGrid);
     }

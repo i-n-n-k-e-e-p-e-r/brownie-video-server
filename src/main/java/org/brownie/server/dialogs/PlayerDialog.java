@@ -6,6 +6,7 @@ import com.brownie.videojs.VideoJS;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import org.brownie.server.Application;
@@ -37,7 +38,7 @@ public class PlayerDialog extends Dialog {
 		
 		Button closeButton = new Button("Stop and close");
 		closeButton.setWidthFull();
-		
+		closeButton.setIcon(VaadinIcon.CLOSE_CIRCLE.create());
 		closeButton.setDisableOnClick(true);
 		closeButton.addClickListener(closeListener -> {
 			Application.LOGGER.log(System.Logger.Level.DEBUG,

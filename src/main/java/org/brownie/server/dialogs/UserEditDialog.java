@@ -5,12 +5,12 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import org.brownie.server.Application;
-import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
 import org.brownie.server.security.SecurityFunctions;
 
@@ -108,6 +108,7 @@ public class UserEditDialog extends Dialog {
 
 		Button save = new Button();
 		save.setText("Save");
+		save.setIcon(VaadinIcon.CHECK_CIRCLE_O.create());
 		save.setWidth("100%");
 		save.setDisableOnClick(true);
 		save.addClickListener(e -> {
@@ -126,6 +127,7 @@ public class UserEditDialog extends Dialog {
 
 		Button cancel = new Button();
 		cancel.setText("Cancel");
+		cancel.setIcon(VaadinIcon.CLOSE_CIRCLE_O.create());
 		cancel.setWidth("100%");
 		cancel.setDisableOnClick(true);
 		cancel.addClickListener(e -> close());

@@ -5,15 +5,12 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
-import com.vaadin.flow.component.grid.SortOrderProvider;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
-import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.provider.SortDirection;
-import com.vaadin.flow.function.ValueProvider;
 import org.brownie.server.Application;
 import org.brownie.server.db.User;
 import org.brownie.server.dialogs.PlayerDialog;
@@ -26,73 +23,83 @@ import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.recoder.VideoDecoder;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 public class MainViewComponents {
     public static MenuBar createMenuBar(MainView mainView) {
         MenuBar menuBar = new MenuBar();
 
-        MenuItem file = menuBar.addItem("File");
-        file.getSubMenu().addItem("Uploads", e -> {
-            UploadsDialog dialog = new UploadsDialog();
-            dialog.open();
-        });
-        file.getSubMenu().addItem("Delete", e -> {
-            if (mainView == null ||
-                    mainView.getFilesGrid() == null ||
-                    mainView.getFilesGrid().getSelectedItems().size() == 0) {
-                return;
-            }
+        if (mainView.getCurrentUser().getGroup() == User.GROUP.ADMIN.ordinal()) {
+            MenuItem file = menuBar.addItem("File");
+            file.addComponentAsFirst(VaadinIcon.FILM.create());
 
-            ConfirmDialog cd = new ConfirmDialog();
-            cd.setHeader("Are you shure?");
-            cd.setText("Selected files and folders will be deleted.");
-            cd.addConfirmListener(event -> {
-                if (mainView.getFilesGrid() != null) {
-                    mainView.getFilesGrid().getSelectedItems().forEach(f -> {
-                        if (f.exists()) {
-                            if (f.isDirectory()) {
-                                List.of(Objects.requireNonNull(f.listFiles())).forEach(ff -> {
-                                    if (ff.exists()) {
-                                        if (ff.delete()) {
-                                            Application.LOGGER.log(System.Logger.Level.INFO,
-                                                    "Deleted '" + f.getAbsolutePath() + "'");
-                                        } else {
-                                            Application.LOGGER.log(System.Logger.Level.ERROR,
-                                                    "Can't delete '" + f.getAbsolutePath() + "'");
-                                        }
-                                    }
-                                });
-                            }
+            file.getSubMenu().addItem("Uploads", e -> {
+                UploadsDialog dialog = new UploadsDialog();
+                dialog.open();
+            });
+
+            file.getSubMenu().addItem("Delete", e -> {
+                if (mainView == null ||
+                        mainView.getFilesGrid() == null ||
+                        mainView.getFilesGrid().getSelectedItems().size() == 0) {
+                    return;
+                }
+
+                ConfirmDialog cd = new ConfirmDialog();
+                cd.setRejectable(true);
+                cd.addRejectListener(rEvent -> cd.close());
+                cd.setHeader("Are you shure?");
+                cd.setText("Selected files and folders will be deleted.");
+                cd.addConfirmListener(event -> {
+                    if (mainView.getFilesGrid() != null) {
+                        mainView.getFilesGrid().getSelectedItems().forEach(f -> {
                             if (f.exists()) {
-                                if (f.delete()) {
-                                    Application.LOGGER.log(System.Logger.Level.INFO,
-                                            "Deleted '" + f.getAbsolutePath() + "'");
-                                } else {
-                                    Application.LOGGER.log(System.Logger.Level.ERROR,
-                                            "Can't delete '" + f.getAbsolutePath() + "'");
+                                if (f.isDirectory()) {
+                                    List.of(Objects.requireNonNull(f.listFiles())).forEach(ff -> {
+                                        if (ff.exists()) {
+                                            if (ff.delete()) {
+                                                Application.LOGGER.log(System.Logger.Level.INFO,
+                                                        "Deleted '" + f.getAbsolutePath() + "'");
+                                            } else {
+                                                Application.LOGGER.log(System.Logger.Level.ERROR,
+                                                        "Can't delete '" + f.getAbsolutePath() + "'");
+                                            }
+                                        }
+                                    });
+                                }
+                                if (f.exists()) {
+                                    if (f.delete()) {
+                                        Application.LOGGER.log(System.Logger.Level.INFO,
+                                                "Deleted '" + f.getAbsolutePath() + "'");
+                                    } else {
+                                        Application.LOGGER.log(System.Logger.Level.ERROR,
+                                                "Can't delete '" + f.getAbsolutePath() + "'");
+                                    }
                                 }
                             }
-                        }
-                    });
-                }
-                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
-                cd.close();
+                        });
+                    }
+                    EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
+                    cd.close();
+                });
+                cd.addRejectListener(event -> cd.close());
+                cd.open();
             });
-            cd.addRejectListener(event -> cd.close());
-            cd.open();
-        });
-        menuBar.addItem("Users", e -> {
-            UsersDialog usersDialog = new UsersDialog();
-            usersDialog.open();
-        });
-        menuBar.addItem("System information", e -> {
+
+            MenuItem users = menuBar.addItem("Users", e -> {
+                UsersDialog usersDialog = new UsersDialog();
+                usersDialog.open();
+            });
+            users.addComponentAsFirst(VaadinIcon.USERS.create());
+        }
+
+        MenuItem systemInformation = menuBar.addItem("System information", e -> {
             SystemLoadDialog.showSystemLoadDialog();
         });
+
+        systemInformation.addComponentAsFirst(VaadinIcon.INFO_CIRCLE_O.create());
 
         return menuBar;
     }
@@ -103,9 +110,9 @@ public class MainViewComponents {
         Grid.Column<?> fileNameColumn = treeGrid.addComponentHierarchyColumn(file -> {
             HorizontalLayout value;
             if (file.isDirectory()) {
-                value = new HorizontalLayout(VaadinIcon.FOLDER.create(), new Label(file.getName()));
+                value = new HorizontalLayout(VaadinIcon.RECORDS.create(), new Label(file.getName()));
             } else {
-                value = new HorizontalLayout(VaadinIcon.FILE.create(), new Label(file.getName()));
+                value = new HorizontalLayout(VaadinIcon.FILM.create(), new Label(file.getName()));
             }
             value.setPadding(false);
             value.setSpacing(true);
@@ -132,10 +139,12 @@ public class MainViewComponents {
                 if (VideoDecoder.getDecoder().isEncoding(file)) {
                     playButton.setEnabled(false);
                     playButton.setText("Encoding...");
+                    playButton.setIcon(VaadinIcon.REFRESH.create());
                 }
                 if(!file.getAbsolutePath().endsWith("." + VideoDecoder.OUTPUT_VIDEO_FORMAT)) {
                     playButton.setEnabled(false);
                     playButton.setText("Not supported");
+                    playButton.setIcon(VaadinIcon.CLOSE.create());
                 }
 
                 return playButton;

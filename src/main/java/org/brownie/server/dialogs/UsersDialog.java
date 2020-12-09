@@ -7,6 +7,8 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -21,7 +23,7 @@ import java.util.stream.Collectors;
 
 public class UsersDialog extends Dialog {
 
-    public static final String MIN_WIDTH = "380px";
+    public static final String MIN_WIDTH = "420px";
     public static final String MIN_HEIGHT = "460px";
     private static final List<User> users = Collections.synchronizedList(new ArrayList<>());
     private static final List<Grid<User>> gridsForUpdate = Collections.synchronizedList(new ArrayList<>());
@@ -39,7 +41,7 @@ public class UsersDialog extends Dialog {
         this.setCloseOnEsc(true);
         this.setCloseOnOutsideClick(true);
         this.setResizable(true);
-        this.setModal(false);
+        this.setModal(true);
         this.setDraggable(true);
 
         this.addOpenedChangeListener(e -> {
@@ -96,9 +98,9 @@ public class UsersDialog extends Dialog {
         menuLayout.setWidthFull();
         menuLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         menuLayout.add(
-                getMenuButton("New", e -> openNewDialog(usersGrid)),
-                getMenuButton("Edit", e -> openEditDialog(usersGrid)),
-                getMenuButton("Delete", e -> openDeleteDialog(usersGrid))
+                getMenuButton("New", VaadinIcon.PLUS_CIRCLE_O.create(), e -> openNewDialog(usersGrid)),
+                getMenuButton("Edit", VaadinIcon.ELLIPSIS_CIRCLE_O.create(), e -> openEditDialog(usersGrid)),
+                getMenuButton("Delete", VaadinIcon.MINUS_CIRCLE_O.create(), e -> openDeleteDialog(usersGrid))
         );
 
         usersGrid.setItems(users);
@@ -114,16 +116,21 @@ public class UsersDialog extends Dialog {
         usersGrid.setSizeFull();
         usersGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
-        mainLayout.add(titleLayout, menuLayout, usersGrid, getMenuButton("Close", e -> close()));
+        mainLayout.add(
+                titleLayout,
+                menuLayout,
+                usersGrid,
+                getMenuButton("Close", VaadinIcon.CLOSE_CIRCLE.create(), e -> close()));
 
         mainLayout.setSizeFull();
         mainLayout.setSpacing(true);
         add(mainLayout);
     }
 
-    private Button getMenuButton(String text, ComponentEventListener<ClickEvent<Button>> listener) {
+    private Button getMenuButton(String text, Icon icon, ComponentEventListener<ClickEvent<Button>> listener) {
         Button button = new Button(text);
         button.setWidthFull();
+        button.setIcon(icon);
         button.addClickListener(listener);
 
         return button;
@@ -158,6 +165,8 @@ public class UsersDialog extends Dialog {
         ConfirmDialog confirmDialog = new ConfirmDialog();
         confirmDialog.setHeader("Are you shure?");
         confirmDialog.setText("User will be deleted permanently");
+        confirmDialog.setRejectable(true);
+        confirmDialog.addRejectListener(rEvent -> confirmDialog.close());
         confirmDialog.addConfirmListener(confirmed -> {
             User user = usersGrid.getSelectedItems().iterator().next();
             user.deleteUserFromDB();
