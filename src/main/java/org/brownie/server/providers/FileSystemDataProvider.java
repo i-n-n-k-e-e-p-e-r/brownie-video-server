@@ -10,14 +10,18 @@ import org.brownie.server.Application;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.events.IEventListener;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.net.FileNameMap;
+import java.net.URLConnection;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,9 +59,9 @@ public class FileSystemDataProvider
 	@Override
 	protected Stream<File> fetchChildrenFromBackEnd(HierarchicalQuery<File, FilenameFilter> query) {
 		final File parent = query.getParentOptional().orElse(root);
-		if ((parent.listFiles() == null || parent.listFiles().length == 0)
+		if ((parent.listFiles() == null || Objects.requireNonNull(parent.listFiles()).length == 0)
 				|| ((query.getFilter().isPresent() && parent.listFiles(query.getFilter().get()) == null)
-				|| (query.getFilter().isPresent() && parent.listFiles(query.getFilter().get()).length == 0))) {
+				|| (query.getFilter().isPresent() && Objects.requireNonNull(parent.listFiles(query.getFilter().get())).length == 0))) {
 			return sortFileStream(new ArrayList<File>().stream(), query.getSortOrders());
 		}
 		Stream<File> filteredFiles = query.getFilter()
@@ -73,7 +77,7 @@ public class FileSystemDataProvider
 		return item.list() != null && Objects.requireNonNull(item.list()).length > 0;
 	}
 	
-	private Stream<File> sortFileStream(Stream<File> fileStream, List<QuerySortOrder> sortOrders) {	
+	private Stream<File> sortFileStream(Stream<File> fileStream, List<QuerySortOrder> sortOrders) {
 		if (sortOrders.isEmpty()) {
 		    return fileStream;
 		}
@@ -155,5 +159,109 @@ public class FileSystemDataProvider
 		result.add(order);
 
 		return result.stream();
+	}
+
+	public static String getMIMEType(File file) {
+		FileNameMap fileNameMap = URLConnection.getFileNameMap();
+
+		String mimeType = null;
+		try {
+			mimeType = fileNameMap.getContentTypeFor(file.getName());
+		} catch (Exception ex) {
+			Application.LOGGER.log(System.Logger.Level.ERROR,
+					"Error while getting mime type in FileSystemDataProvider", ex);
+		} finally {
+			if (mimeType == null || mimeType.length() == 0) mimeType = "";
+		}
+
+		return mimeType;
+	}
+
+	public static boolean isVideo(File file) {
+		return getMIMEType(file).contains("video");
+	}
+
+	public static boolean isImage(File file) {
+		return getMIMEType(file).contains("image");
+	}
+
+	public static boolean isAudio(File file) {
+		return getMIMEType(file).contains("audio");
+	}
+
+	public static boolean isText(File file) {
+		return getMIMEType(file).contains("text");
+	}
+
+	public static boolean isDataFile(File file) {
+		return (!isVideo(file) && !isImage(file) && !isAudio(file) && !isText(file));
+	}
+
+	public static void copyUploadedFile(String folderName, File original) {
+		if (original == null || folderName == null) {
+			Application.LOGGER.log(System.Logger.Level.ERROR,
+					"Can't copy file. Sub directory or original file is null");
+			return;
+		}
+
+		Path subDirectory = MediaDirectories.createSubDirectoryInMedias(folderName.trim());
+		File uniqueFileName = FileSystemDataProvider.getUniqueFileName(
+				Paths.get(subDirectory.toFile().getAbsolutePath(), original.getName()).toFile());
+
+		Path copied = Paths.get(subDirectory.toFile().getAbsolutePath(), uniqueFileName.getName());
+
+		Path originalPath = original.toPath();
+		try {
+			Files.copy(originalPath, copied, StandardCopyOption.REPLACE_EXISTING);
+		} catch (IOException e) {
+			Application.LOGGER.log(System.Logger.Level.ERROR,
+					"Error while coping file from '" + original.getAbsolutePath() + "' to '" + copied.toFile().getAbsolutePath() + "'", e);
+			e.printStackTrace();
+		} finally {
+			if (original.exists()) {
+				if (original.delete()) {
+					Application.LOGGER.log(System.Logger.Level.INFO,
+							"Original file deleted '" + original.getAbsolutePath() + "'");
+				} else {
+					Application.LOGGER.log(System.Logger.Level.ERROR,
+							"Can't delete folder '" +
+									Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
+				}
+			}
+
+			File[] uploadedFiles = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().listFiles();
+			if ((uploadedFiles == null || uploadedFiles.length == 0)) {
+				if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().delete()) {
+					Application.LOGGER.log(System.Logger.Level.INFO,
+							"Folder deleted '" +
+									Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
+				} else {
+					Application.LOGGER.log(System.Logger.Level.ERROR,
+							"Can't delete folder '" +
+									Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
+				}
+			}
+
+			EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
+		}
+	}
+
+	public static Map.Entry<Integer, Integer> getImageSize(File file) {
+		if (file != null && file.exists()) {
+			BufferedImage bufferedImage = null;
+			try {
+				bufferedImage = ImageIO.read(file);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				if (bufferedImage != null) {
+					int width = bufferedImage.getWidth();
+					int height = bufferedImage.getHeight();
+					return new AbstractMap.SimpleEntry<>(width, height);
+				}
+			}
+		}
+
+		return null;
 	}
 }

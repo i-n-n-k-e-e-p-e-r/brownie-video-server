@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,18 +51,7 @@ public class VideoDecoder {
     }
 
     public synchronized void addFileToQueue(String folderName, File source) {
-        Path subDirectory = Paths.get(MediaDirectories.mediaDirectory.getAbsolutePath(), folderName);
-        if (!subDirectory.toFile().exists()) {
-            if (subDirectory.toFile().mkdir()) {
-                Application.LOGGER.log(System.Logger.Level.INFO,
-                        "Created sub directory '" + subDirectory.toFile().getAbsolutePath() + "'");
-            } else {
-                Application.LOGGER.log(System.Logger.Level.WARNING,
-                        "Can't create sub directory '" + subDirectory.toFile().getAbsolutePath() + "'");
-            }
-            EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
-        }
-
+        Path subDirectory = MediaDirectories.createSubDirectoryInMedias(folderName);
         File uniqueFileName = FileSystemDataProvider.getUniqueFileName(
                 Paths.get(subDirectory.toFile().getAbsolutePath(), source.getName()).toFile());
         final File targetFile = changeExtension(uniqueFileName, OUTPUT_VIDEO_FORMAT);
@@ -173,9 +161,10 @@ public class VideoDecoder {
                     }
                 }
 
+
+                File[] uploadedFiles = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().listFiles();
                 if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().exists() &&
-                        Objects.requireNonNull(Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
-                                folderName).toFile().listFiles()).length == 0) {
+                        uploadedFiles != null && uploadedFiles.length == 0) {
                     if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().delete()) {
                         Application.LOGGER.log(System.Logger.Level.INFO,
                                 "Folder deleted '" +

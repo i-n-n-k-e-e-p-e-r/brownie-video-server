@@ -1,12 +1,11 @@
 package org.brownie.server.db;
 
-import java.sql.SQLException;
-
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 import org.brownie.server.Application;
-import org.springframework.context.ApplicationEventPublisherAware;
+
+import java.sql.SQLException;
 
 
 @DatabaseTable(tableName = "users")

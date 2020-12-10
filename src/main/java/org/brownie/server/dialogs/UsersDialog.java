@@ -1,13 +1,9 @@
 package org.brownie.server.dialogs;
 
-import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Label;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -16,6 +12,7 @@ import com.vaadin.flow.data.provider.Query;
 import org.brownie.server.Application;
 import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
+import org.brownie.server.views.CommonComponents;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -57,27 +54,25 @@ public class UsersDialog extends Dialog {
         try {
             users.clear();
             users.addAll((Collection<? extends User>) DBConnectionProvider.getInstance().getOrmDaos().get(User.class).queryForAll());
-            new Thread(() -> {
-                gridsForUpdate.parallelStream().forEach(grid -> {
-                    if (grid == null || grid.getDataProvider() == null) return;
+            new Thread(() -> gridsForUpdate.parallelStream().forEach(grid -> {
+                if (grid == null || grid.getDataProvider() == null) return;
 
-                    var ui = grid.getUI().isPresent() ? grid.getUI().get() : null;
-                    if (ui != null) ui.access(() -> {
-                        Set<?> selected = grid.getSelectedItems();
-                        grid.getDataProvider().refreshAll();
+                var ui = grid.getUI().isPresent() ? grid.getUI().get() : null;
+                if (ui != null) ui.access(() -> {
+                    Set<?> selected = grid.getSelectedItems();
+                    grid.getDataProvider().refreshAll();
 
-                        grid.getDataProvider()
-                                .fetch(new Query<>())
-                                .collect(Collectors.toSet())
-                                .forEach(item -> {
-                                    if (selected.stream().anyMatch(
-                                            u -> ((User) u).getUserId().intValue() == item.getUserId().intValue())) {
-                                        grid.select(item);
-                                    }
-                        });
+                    grid.getDataProvider()
+                            .fetch(new Query<>())
+                            .collect(Collectors.toSet())
+                            .forEach(item -> {
+                                if (selected.stream().anyMatch(
+                                        u -> ((User) u).getUserId().intValue() == item.getUserId().intValue())) {
+                                    grid.select(item);
+                                }
                     });
                 });
-            }).start();
+            })).start();
         } catch (SQLException e) {
             e.printStackTrace();
             Application.LOGGER.log(System.Logger.Level.ERROR, "Error while loading users.", e);
@@ -98,9 +93,12 @@ public class UsersDialog extends Dialog {
         menuLayout.setWidthFull();
         menuLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         menuLayout.add(
-                getMenuButton("New", VaadinIcon.PLUS_CIRCLE_O.create(), e -> openNewDialog(usersGrid)),
-                getMenuButton("Edit", VaadinIcon.ELLIPSIS_CIRCLE_O.create(), e -> openEditDialog(usersGrid)),
-                getMenuButton("Delete", VaadinIcon.MINUS_CIRCLE_O.create(), e -> openDeleteDialog(usersGrid))
+                CommonComponents.createButton("New", VaadinIcon.PLUS_CIRCLE_O.create(),
+                        e -> openNewDialog()),
+                CommonComponents.createButton("Edit", VaadinIcon.ELLIPSIS_CIRCLE_O.create(),
+                        e -> openEditDialog(usersGrid)),
+                CommonComponents.createButton("Delete", VaadinIcon.MINUS_CIRCLE_O.create(),
+                        e -> openDeleteDialog(usersGrid))
         );
 
         usersGrid.setItems(users);
@@ -120,23 +118,14 @@ public class UsersDialog extends Dialog {
                 titleLayout,
                 menuLayout,
                 usersGrid,
-                getMenuButton("Close", VaadinIcon.CLOSE_CIRCLE.create(), e -> close()));
+                CommonComponents.createButton("Close", VaadinIcon.CLOSE_CIRCLE.create(), e -> close()));
 
         mainLayout.setSizeFull();
         mainLayout.setSpacing(true);
         add(mainLayout);
     }
 
-    private Button getMenuButton(String text, Icon icon, ComponentEventListener<ClickEvent<Button>> listener) {
-        Button button = new Button(text);
-        button.setWidthFull();
-        button.setIcon(icon);
-        button.addClickListener(listener);
-
-        return button;
-    }
-
-    private void openNewDialog(Grid<User> usersGrid) {
+    private void openNewDialog() {
         UserEditDialog dialog = new UserEditDialog(false);
         dialog.setWidth(UserEditDialog.MIN_WIDTH);
         dialog.addOpenedChangeListener(newOpened -> {

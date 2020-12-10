@@ -5,7 +5,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Label;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import org.brownie.server.Application;
 
@@ -64,9 +63,7 @@ public class SystemLoadDialog extends Dialog {
                 stop();
             }
         });
-        this.addDetachListener(e -> {
-            stop();
-        });
+        this.addDetachListener(e -> stop());
 
         if (innerThread == null) this.innerThread = new InnerThread(this);
         this.innerThread.start();
@@ -111,7 +108,7 @@ public class SystemLoadDialog extends Dialog {
         });
     }
 
-    private class InnerThread extends Thread {
+    private static class InnerThread extends Thread {
         private boolean terminated = false;
         private final SystemLoadDialog parentDialog;
 

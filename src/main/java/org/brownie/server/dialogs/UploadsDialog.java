@@ -102,7 +102,11 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 Application.LOGGER.log(System.Logger.Level.INFO,
                         "New file uploaded '" + newFile.getAbsolutePath() + "'");
 
-                VideoDecoder.getDecoder().addFileToQueue(subDir.trim(), newFile);
+                if (FileSystemDataProvider.isVideo(newFile)) {
+                    VideoDecoder.getDecoder().addFileToQueue(subDir.trim(), newFile);
+                } else {
+                    FileSystemDataProvider.copyUploadedFile(subDir, newFile);
+                }
             } else {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Can't create new file '" + newFile.getAbsolutePath() + "'");
@@ -127,7 +131,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
     @Override
     public void update(EventsManager.EVENT_TYPE eventType, Object[] params) {
         var ui = this.getUI().isPresent() ? this.getUI().get() : null;
-        if (ui != null) ui.getSession().access(() -> updateDiscCapacity());
+        if (ui != null) ui.getSession().access(this::updateDiscCapacity);
     }
 
     @Override

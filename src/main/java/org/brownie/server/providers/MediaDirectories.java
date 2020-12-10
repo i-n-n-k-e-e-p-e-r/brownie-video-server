@@ -2,8 +2,10 @@ package org.brownie.server.providers;
 
 import com.vaadin.flow.component.notification.Notification;
 import org.brownie.server.Application;
+import org.brownie.server.events.EventsManager;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class MediaDirectories {
@@ -53,5 +55,20 @@ public class MediaDirectories {
                 Notification.show(msg);
             Application.LOGGER.log(System.Logger.Level.ERROR, msg);
         }
+    }
+
+    public static Path createSubDirectoryInMedias(String folderName) {
+        Path subDirectory = Paths.get(MediaDirectories.mediaDirectory.getAbsolutePath(), folderName);
+        if (!subDirectory.toFile().exists()) {
+            if (subDirectory.toFile().mkdir()) {
+                Application.LOGGER.log(System.Logger.Level.INFO,
+                        "Created sub directory '" + subDirectory.toFile().getAbsolutePath() + "'");
+            } else {
+                Application.LOGGER.log(System.Logger.Level.WARNING,
+                        "Can't create sub directory '" + subDirectory.toFile().getAbsolutePath() + "'");
+            }
+            EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
+        }
+        return subDirectory;
     }
 }

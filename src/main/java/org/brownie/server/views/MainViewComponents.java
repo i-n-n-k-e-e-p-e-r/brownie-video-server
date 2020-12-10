@@ -1,11 +1,13 @@
 package org.brownie.server.views;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -33,7 +35,7 @@ public class MainViewComponents {
 
         if (mainView.getCurrentUser().getGroup() == User.GROUP.ADMIN.ordinal()) {
             MenuItem file = menuBar.addItem("File");
-            file.addComponentAsFirst(VaadinIcon.FILM.create());
+            file.addComponentAsFirst(VaadinIcon.CLIPBOARD_TEXT.create());
 
             file.getSubMenu().addItem("Uploads", e -> {
                 UploadsDialog dialog = new UploadsDialog();
@@ -41,9 +43,7 @@ public class MainViewComponents {
             });
 
             file.getSubMenu().addItem("Delete", e -> {
-                if (mainView == null ||
-                        mainView.getFilesGrid() == null ||
-                        mainView.getFilesGrid().getSelectedItems().size() == 0) {
+                if (mainView.getFilesGrid() == null || mainView.getFilesGrid().getSelectedItems().size() == 0) {
                     return;
                 }
 
@@ -92,28 +92,42 @@ public class MainViewComponents {
                 UsersDialog usersDialog = new UsersDialog();
                 usersDialog.open();
             });
-            users.addComponentAsFirst(VaadinIcon.USERS.create());
+            users.addComponentAsFirst(VaadinIcon.GROUP.create());
         }
 
-        MenuItem systemInformation = menuBar.addItem("System information", e -> {
-            SystemLoadDialog.showSystemLoadDialog();
-        });
+        MenuItem systemInformation = menuBar.addItem("System information",
+                e -> SystemLoadDialog.showSystemLoadDialog());
 
         systemInformation.addComponentAsFirst(VaadinIcon.INFO_CIRCLE_O.create());
 
         return menuBar;
     }
 
+    private static Icon getIconForFile(File file) {
+        if (file.isDirectory()) {
+            return VaadinIcon.RECORDS.create();
+        }
+        if (FileSystemDataProvider.isVideo(file)) {
+            return VaadinIcon.FILM.create();
+        }
+        if (FileSystemDataProvider.isAudio(file)) {
+            return VaadinIcon.HEADPHONES.create();
+        }
+        if (FileSystemDataProvider.isImage(file)) {
+            return VaadinIcon.PICTURE.create();
+        }
+        if (FileSystemDataProvider.isText(file)) {
+            return VaadinIcon.TEXT_LABEL.create();
+        }
+
+        return VaadinIcon.FILE_O.create();
+    }
+
     public static TreeGrid<File> createFilesTreeGrid(MainView mainView) {
         TreeGrid<File> treeGrid = new TreeGrid<>();
 
         Grid.Column<?> fileNameColumn = treeGrid.addComponentHierarchyColumn(file -> {
-            HorizontalLayout value;
-            if (file.isDirectory()) {
-                value = new HorizontalLayout(VaadinIcon.RECORDS.create(), new Label(file.getName()));
-            } else {
-                value = new HorizontalLayout(VaadinIcon.FILM.create(), new Label(file.getName()));
-            }
+            HorizontalLayout value = new HorizontalLayout(getIconForFile(file), new Label(file.getName()));
             value.setPadding(false);
             value.setSpacing(true);
 
@@ -122,36 +136,8 @@ public class MainViewComponents {
         fileNameColumn.setId("file-name");
         fileNameColumn.setSortable(true);
 
-        Grid.Column<?> playColumn = treeGrid.addComponentColumn(file -> {
-            if (!file.isDirectory()) {
-                Button playButton = new Button();
-                playButton.setText("Play");
-                playButton.setIcon(VaadinIcon.PLAY.create());
-                playButton.setWidthFull();
-                playButton.setDisableOnClick(true);
-                playButton.addClickListener(playListener -> {
-                    final PlayerDialog dialog = new PlayerDialog(file, null, mainView);
-                    playButton.setEnabled(true);
-                    dialog.open();
-                });
-
-                playButton.setEnabled(true);
-                if (VideoDecoder.getDecoder().isEncoding(file)) {
-                    playButton.setEnabled(false);
-                    playButton.setText("Encoding...");
-                    playButton.setIcon(VaadinIcon.REFRESH.create());
-                }
-                if(!file.getAbsolutePath().endsWith("." + VideoDecoder.OUTPUT_VIDEO_FORMAT)) {
-                    playButton.setEnabled(false);
-                    playButton.setText("Not supported");
-                    playButton.setIcon(VaadinIcon.CLOSE.create());
-                }
-
-                return playButton;
-            }
-
-            return new Label();
-        }).setHeader("Actions");
+        Grid.Column<?> playColumn = treeGrid.addComponentColumn(file ->
+                MainViewComponents.getActionsLayout(mainView, file)).setHeader("Actions");
         playColumn.setId("file-play");
         playColumn.setSortable(false);
 
@@ -169,5 +155,59 @@ public class MainViewComponents {
                 SortDirection.ASCENDING)));
 
         return treeGrid;
+    }
+
+    private static Component getActionsLayout(MainView mainView, File file) {
+        if (file.isDirectory()) return new Label();
+
+        HorizontalLayout actionsLayout = new HorizontalLayout();
+        actionsLayout.setSpacing(true);
+        actionsLayout.setWidthFull();
+
+        Button playButton = new Button();
+        if (FileSystemDataProvider.isVideo(file) || FileSystemDataProvider.isAudio(file)) {
+            playButton.setText("Play");
+            playButton.setIcon(VaadinIcon.PLAY.create());
+        } else {
+            if (FileSystemDataProvider.isImage(file) || FileSystemDataProvider.isText(file)) {
+                playButton.setText("Show");
+                playButton.setIcon(VaadinIcon.OPEN_BOOK.create());
+            }
+        }
+        playButton.setWidthFull();
+        playButton.setDisableOnClick(true);
+        playButton.addClickListener(playListener -> {
+            final PlayerDialog dialog = new PlayerDialog(file, null, mainView);
+            playButton.setEnabled(true);
+            dialog.setWidth(PlayerDialog.MIN_WIDTH);
+            dialog.open();
+        });
+
+        playButton.setEnabled(true);
+        if (VideoDecoder.getDecoder().isEncoding(file)) {
+            playButton.setEnabled(false);
+            playButton.setText("Encoding...");
+            playButton.setIcon(VaadinIcon.COGS.create());
+        }
+        if (isNotSupported(file)) {
+            playButton.setEnabled(false);
+            playButton.setText("Not supported");
+            playButton.setIcon(VaadinIcon.FROWN_O.create());
+        }
+
+        actionsLayout.add(
+                playButton,
+                CommonComponents.getDownloadButtonWrapper(
+                        "Download",
+                        VaadinIcon.DOWNLOAD.create(),
+                        file)
+        );
+
+        return actionsLayout;
+    }
+
+    private static boolean isNotSupported(File file) {
+        return (FileSystemDataProvider.isVideo(file) && !file.getName().endsWith(VideoDecoder.OUTPUT_VIDEO_FORMAT))
+                || FileSystemDataProvider.isDataFile(file);
     }
 }

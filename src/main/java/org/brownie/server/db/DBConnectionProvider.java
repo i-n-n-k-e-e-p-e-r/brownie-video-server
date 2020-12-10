@@ -22,13 +22,14 @@ public class DBConnectionProvider {
 	public static final String DB_NAME = "brownieDB.db";
 	
 	private static DBConnectionProvider provider = null;
-	private String connectionString = "";
+	private final String connectionString;
 	
 	private ConnectionSource connectionSource;
-	private final Map<Class<? extends Object>, Dao<?, ?>> ormDaos = Collections.synchronizedMap(new HashMap<>());
+	private final Map<Class<?>, Dao<?, ?>> ormDaos = Collections.synchronizedMap(new HashMap<>());
 
 	private DBConnectionProvider() throws SQLException {
-		String pathToDB = new File("").getAbsolutePath();
+		String pathToDB;
+		pathToDB = new File("").getAbsolutePath();
 		this.connectionString = "jdbc:sqlite:" + pathToDB + File.separator + DB_NAME;
 		Application.LOGGER.log(System.Logger.Level.INFO,
 				"DB connection string '" + this.connectionString + "'");
@@ -109,7 +110,7 @@ public class DBConnectionProvider {
 		return this.connectionSource;
 	}
 	
-	public Map<Class<? extends Object>, Dao<?, ?>> getOrmDaos() {
+	public Map<Class<?>, Dao<?, ?>> getOrmDaos() {
 		return this.ormDaos;
 	}
 }
