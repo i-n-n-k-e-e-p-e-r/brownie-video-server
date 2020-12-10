@@ -13,7 +13,6 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.SortDirection;
-import org.brownie.server.Application;
 import org.brownie.server.db.User;
 import org.brownie.server.dialogs.PlayerDialog;
 import org.brownie.server.dialogs.SystemLoadDialog;
@@ -26,8 +25,6 @@ import org.brownie.server.recoder.VideoDecoder;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 
 public class MainViewComponents {
     public static MenuBar createMenuBar(MainView mainView) {
@@ -54,32 +51,8 @@ public class MainViewComponents {
                 cd.setText("Selected files and folders will be deleted.");
                 cd.addConfirmListener(event -> {
                     if (mainView.getFilesGrid() != null) {
-                        mainView.getFilesGrid().getSelectedItems().forEach(f -> {
-                            if (f.exists()) {
-                                if (f.isDirectory()) {
-                                    List.of(Objects.requireNonNull(f.listFiles())).forEach(ff -> {
-                                        if (ff.exists()) {
-                                            if (ff.delete()) {
-                                                Application.LOGGER.log(System.Logger.Level.INFO,
-                                                        "Deleted '" + f.getAbsolutePath() + "'");
-                                            } else {
-                                                Application.LOGGER.log(System.Logger.Level.ERROR,
-                                                        "Can't delete '" + f.getAbsolutePath() + "'");
-                                            }
-                                        }
-                                    });
-                                }
-                                if (f.exists()) {
-                                    if (f.delete()) {
-                                        Application.LOGGER.log(System.Logger.Level.INFO,
-                                                "Deleted '" + f.getAbsolutePath() + "'");
-                                    } else {
-                                        Application.LOGGER.log(System.Logger.Level.ERROR,
-                                                "Can't delete '" + f.getAbsolutePath() + "'");
-                                    }
-                                }
-                            }
-                        });
+                        mainView.getFilesGrid().getSelectedItems().forEach(
+                                FileSystemDataProvider::deleteFileOrDirectory);
                     }
                     EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
                     cd.close();

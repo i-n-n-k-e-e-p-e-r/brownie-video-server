@@ -9,6 +9,7 @@ import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 import org.brownie.server.Application;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.events.IEventListener;
+import org.brownie.server.recoder.VideoDecoder;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -263,5 +264,43 @@ public class FileSystemDataProvider
 		}
 
 		return null;
+	}
+
+	public static void deleteFileOrDirectory(File fileForDelete) {
+		if (!fileForDelete.exists()) { return; }
+
+		if (fileForDelete.isDirectory()) {
+			List.of(Objects.requireNonNull(fileForDelete.listFiles())).forEach(childFile -> {
+				if (childFile.exists() && !VideoDecoder.getDecoder().isEncoding(childFile)) {
+					if (childFile.delete()) {
+						Application.LOGGER.log(System.Logger.Level.INFO,
+								"Deleted '" + childFile.getAbsolutePath() + "'");
+					} else {
+						Application.LOGGER.log(System.Logger.Level.ERROR,
+								"Can't delete '" + childFile.getAbsolutePath() + "'");
+					}
+				}
+			});
+
+			if (fileForDelete.listFiles() == null ||
+					(fileForDelete.listFiles() != null
+							&& Objects.requireNonNull(fileForDelete.listFiles()).length == 0)) {
+				if (fileForDelete.delete()) {
+					Application.LOGGER.log(System.Logger.Level.INFO,
+							"Deleted directory '" + fileForDelete.getAbsolutePath() + "'");
+				} else {
+					Application.LOGGER.log(System.Logger.Level.ERROR,
+							"Can't delete directory'" + fileForDelete.getAbsolutePath() + "'");
+				}
+			}
+		} else {
+			if (fileForDelete.delete()) {
+				Application.LOGGER.log(System.Logger.Level.INFO,
+						"Deleted '" + fileForDelete.getAbsolutePath() + "'");
+			} else {
+				Application.LOGGER.log(System.Logger.Level.ERROR,
+						"Can't delete '" + fileForDelete.getAbsolutePath() + "'");
+			}
+		}
 	}
 }
