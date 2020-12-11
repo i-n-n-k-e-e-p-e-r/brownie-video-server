@@ -6,14 +6,31 @@ Other files uploaded unchanged.
 Supports preview for text, images, video an audio files.  
 Desktop and mobile layout.
 
-## Build
-mvn vaadin:build-frontend; mvn -e clean package -Pproduction;
+## Build 
+##### Maven
+1. Clone this repository
+2. mvn clean install; mvn vaadin:build-frontend; mvn -e clean package -Pproduction;
 
-## Run
-<ol>
-<li>java -jar ./target/brownie-video-server-VERSION.jar</li> 
-<li>Go to localhost:8080</li> 
-<li>Try to login with any credential.</li>
-<li>Create new administrator user.</li>
-</ol>
-</ol>
+##### Docker
+1. Clone this repository
+2. docker build -t brownie-video-server PATH_TO_THIS_REPO_DIRECTORY
+
+
+## Run 
+##### Maven
+1. java -jar ./target/brownie-video-server-VERSION.jar  
+2. Go to localhost:8080  
+3. Try to login with any credential  
+4. Create new administrator user  
+5. Login with new administrator user credential  
+
+##### Docker
+1. Run docker container (two options)
+    - With console output:
+        * docker run -ti -p 7920:8080 brownie-video-server  
+    - In the background:
+        * docker run -d --restart=always --privileged -p 7920:8080 brownie-video-server
+2. Go to http://localhost:7920  
+3. Try to login with any credential
+4. Create new administrator user
+5. Login with new administrator user credential
