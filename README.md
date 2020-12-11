@@ -16,3 +16,4 @@ mvn vaadin:build-frontend; mvn -e clean package -Pproduction;
 <li>Try to login with any credential.</li>
 <li>Create new administrator user.</li>
 </ol>
+</ol>
