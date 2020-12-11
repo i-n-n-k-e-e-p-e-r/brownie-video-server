@@ -254,12 +254,12 @@ public class FileSystemDataProvider
 				bufferedImage = ImageIO.read(file);
 			} catch (IOException e) {
 				e.printStackTrace();
-			} finally {
-				if (bufferedImage != null) {
-					int width = bufferedImage.getWidth();
-					int height = bufferedImage.getHeight();
-					return new AbstractMap.SimpleEntry<>(width, height);
-				}
+			}
+
+			if (bufferedImage != null) {
+				int width = bufferedImage.getWidth();
+				int height = bufferedImage.getHeight();
+				return new AbstractMap.SimpleEntry<>(width, height);
 			}
 		}
 
