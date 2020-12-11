@@ -1,25 +1,24 @@
 package org.brownie.server.views;
 
-
-import java.io.File;
-
-import org.brownie.server.providers.FileSystemDataProvider;
-import org.brownie.server.services.AuthenticationService;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.vaadin.flow.component.button.Button;
+import com.brownie.videojs.VideoJS;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.html.Label;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.login.LoginOverlay;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.PWA;
+import com.vaadin.flow.shared.communication.PushMode;
+import org.brownie.server.db.DBConnectionProvider;
+import org.brownie.server.db.User;
+import org.brownie.server.providers.MediaDirectories;
+import org.brownie.server.services.AuthenticationService;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.File;
 
 /**
  * A sample Vaadin view class.
@@ -34,6 +33,7 @@ import com.vaadin.flow.server.PWA;
  * browser tab/window.
  */
 @Route
+@Push(PushMode.AUTOMATIC)
 @PWA(name = "Brownie Video Server",
         shortName = "BWS",
         description = "Simple home video server",
@@ -52,18 +52,28 @@ public class MainView extends VerticalLayout {
      * <p>
      * Build the initial UI state for the user accessing the application.
      *
-     * @param service The message service. Automatically injected Spring managed bean.
+     * @param authService The auth service. Automatically injected Spring managed bean.
      */
-	
-	private File rootFile;
+
+	private User currentUser;
+	private TreeGrid<File> filesGrid;
 	
     public MainView(@Autowired AuthenticationService authService) {
+    	// no timeout users session
+		UI.getCurrent().getSession().getSession().setMaxInactiveInterval(-1);
+
+    	// create DB and tables
+    	DBConnectionProvider.getInstance();
+    	// init file dynamic resources map
+    	VideoJS.getResourcesRegistrations();
+
     	LoginOverlay login = new LoginOverlay();
     	login.addLoginListener(e -> {
-    		if (authService.isValidUser(e.getUsername(), e.getPassword())) {
+    		this.currentUser = authService.getValidUser(e.getUsername(), e.getPassword());
+    		if (this.currentUser != null) {
         		login.close();
         		initMainView();
-        		
+
         		return;
     		}
 
@@ -81,87 +91,29 @@ public class MainView extends VerticalLayout {
     }
     
     protected void initMainView() {
+		MediaDirectories.initDirectories();
     	this.setSizeFull();
-    	
-    	if (FileSystemDataProvider.getRootFile() == null) {
-    		rootFile = new File(new File("").getAbsolutePath());
-    		if (!rootFile.exists() || !rootFile.isDirectory()) {
-    			Notification.show("Can not locate root directory '" + rootFile.getAbsolutePath() + "'");
-    			return;
-    		}
-    	}
-    	
-        TreeGrid<File> treeGrid = new TreeGrid<>();
-        
-        treeGrid.addComponentHierarchyColumn(file -> {
-	        	HorizontalLayout value;
-	        	if (file.isDirectory()) {
-	        		value = new HorizontalLayout(VaadinIcon.FOLDER.create(), new Label(file.getName()));
-	        	} else {
-	        		value = new HorizontalLayout(VaadinIcon.FILE.create(), new Label(file.getName()));
-	        	}
-	        	value.setPadding(false);
-	        	value.setSpacing(true);
-		        	
-		        return value;
-        	}).setHeader("Name").setId("file-name");
-        
-        treeGrid.addComponentColumn(file -> {
-        	if (!file.isDirectory()) {
-            	Button playButton = new Button();
-            	playButton.setText("Play");
-            	playButton.setIcon(VaadinIcon.PLAY.create());
-            	playButton.setWidth("100px");
-            	playButton.setHeight("30px");
-            	playButton.setDisableOnClick(true);
-            	playButton.addClickListener(playListener -> {
-            		final Dialog dialog = new Dialog();
-            		dialog.setModal(true);
-            		dialog.setDraggable(true);
-            		dialog.setResizable(true);
-            		dialog.setCloseOnOutsideClick(false);
-            		
-            		VerticalLayout vl = new VerticalLayout();
-            		vl.setAlignItems(Alignment.CENTER);
-            		vl.setSpacing(true);
-            		vl.setPadding(true);
-            		vl.setSizeFull();
-            		
-            		Button closeButton = new Button("Stop and close");
-            		closeButton.setWidth("90%");
-            		closeButton.setHeight("30px");
-            		
-            		closeButton.setDisableOnClick(true);
-            		closeButton.addClickListener(closeListener -> {
-            			dialog.close();
-            			closeButton.setEnabled(true);
-            			return;
-            		});
 
-            		Label videoPlayer = new Label("Video player");
-            		videoPlayer.setSizeFull();
-            		vl.add(videoPlayer);
-            		vl.add(closeButton);
-            		
-            		dialog.add(vl);
-            		dialog.setWidth("90%");
-            		dialog.setHeight("90%");
-            		
-            		playButton.setEnabled(true);
-            		
-            		dialog.open();
-            	});
-    	        	
-    	        return playButton;
-        	}
-        	
-        	return new Label();
-    	}).setHeader("...").setId("file-play");
+       	filesGrid = MainViewComponents.createFilesTreeGrid(this);
+		filesGrid.setSizeFull();
 
-        treeGrid.setDataProvider(new FileSystemDataProvider(rootFile));
-        treeGrid.setSizeFull();
-        
-        add(treeGrid);
+		MenuBar menuBar = MainViewComponents.createMenuBar(this);
+		menuBar.setWidthFull();
+		add(menuBar);
+
+        add(filesGrid);
     }
+
+	public User getCurrentUser() {
+		return currentUser;
+	}
+
+	public void setCurrentUser(User currentUser) {
+		this.currentUser = currentUser;
+	}
+
+	public TreeGrid<File> getFilesGrid() {
+    	return this.filesGrid;
+	}
 
 }
