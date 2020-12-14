@@ -2,6 +2,7 @@ package org.brownie.server.views;
 
 import com.brownie.videojs.VideoJS;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.login.LoginOverlay;
@@ -35,12 +36,12 @@ import java.io.File;
 @Route
 @Push(PushMode.AUTOMATIC)
 @PWA(name = "Brownie Video Server",
-        shortName = "BWS",
-        description = "Simple home video server",
+        shortName = "BVS",
+        description = "Simple home video and files server",
         enableInstallPrompt = false)
 @CssImport("./styles/shared-styles.css")
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
-public class MainView extends VerticalLayout {
+public class MainView extends AppLayout {
 
     /**
 	 * 
@@ -86,22 +87,21 @@ public class MainView extends VerticalLayout {
     	login.setTitle("Welcome to Brownie Video Server");
     	login.setDescription("Simple home video server");
 
-    	add(login);
+    	addToDrawer(login);
     	login.setOpened(true);
     }
     
     protected void initMainView() {
 		MediaDirectories.initDirectories();
-    	this.setSizeFull();
 
        	filesGrid = MainViewComponents.createFilesTreeGrid(this);
 		filesGrid.setSizeFull();
 
 		MenuBar menuBar = MainViewComponents.createMenuBar(this);
 		menuBar.setWidthFull();
-		add(menuBar);
-
-        add(filesGrid);
+		addToNavbar(false, menuBar);
+		setDrawerOpened(false);
+        setContent(filesGrid);
     }
 
 	public User getCurrentUser() {

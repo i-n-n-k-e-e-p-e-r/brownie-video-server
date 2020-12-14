@@ -4,6 +4,7 @@ package org.brownie.server.dialogs;
 import com.brownie.videojs.FileStreamFactory;
 import com.brownie.videojs.VideoJS;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Image;
@@ -11,7 +12,6 @@ import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.server.StreamResource;
 import org.brownie.server.Application;
@@ -44,15 +44,10 @@ public class PlayerDialog extends Dialog {
 		this.mainView = mainView;
 
 		setModal(true);
-		setDraggable(true);
-		setResizable(true);
-		setCloseOnOutsideClick(false);
+		setDraggable(false);
+		setResizable(false);
 
-		VerticalLayout mainLayout = new VerticalLayout();
-		mainLayout.setAlignItems(Alignment.CENTER);
-		mainLayout.setSpacing(true);
-		mainLayout.setPadding(true);
-		mainLayout.setSizeUndefined();
+		AppLayout mainLayout = new AppLayout();
 
 		addOpenedChangeListener(e -> {
 			if (e.isOpened()) {
@@ -64,9 +59,9 @@ public class PlayerDialog extends Dialog {
 			}
 		});
 
-		Label title = new Label(media.getName());
-		title.getStyle().set("font-weight", "bold");
-		mainLayout.add(title);
+		mainLayout.setPrimarySection(AppLayout.Section.NAVBAR);
+		this.setWidth("-1");
+		this.setHeight("-1");
 
 		if (FileSystemDataProvider.isVideo(media) || FileSystemDataProvider.isAudio(media)) {
 			add(createVideoLayout(mainLayout));
@@ -86,8 +81,6 @@ public class PlayerDialog extends Dialog {
 		if (FileSystemDataProvider.isDataFile(media) ) {
 			add(createErrorLayout(mainLayout));
 		}
-
-		this.setSizeUndefined();
 	}
 
 	private Button getCloseButton(String text) {
@@ -102,13 +95,13 @@ public class PlayerDialog extends Dialog {
 		return closeButton;
 	}
 
-	private VerticalLayout createVideoLayout(VerticalLayout mainLayout) {
+	private AppLayout createVideoLayout(AppLayout mainLayout) {
 		VideoJS videoPlayer = new VideoJS(UI.getCurrent().getSession(), media, poster);
 		Application.LOGGER.log(System.Logger.Level.DEBUG,
 				"New player " + this.hashCode() + " for user " + mainView.getCurrentUser().getName() + ".");
 
-		videoPlayer.setWidthFull();
-		videoPlayer.setHeight("-1");
+		videoPlayer.setHeight("90%");
+		videoPlayer.setWidth("-1");
 
 		Button playButton = CommonComponents.createButton("Play", VaadinIcon.PLAY.create(), e -> videoPlayer.play());
 		playButton.setWidthFull();
@@ -120,29 +113,33 @@ public class PlayerDialog extends Dialog {
 		buttons.setSpacing(true);
 		buttons.setMargin(true);
 		buttons.setWidthFull();
-		buttons.add(playButton, pauseButton);
+		buttons.add(playButton, pauseButton, getCloseButton("Close"));
 
-		mainLayout.add(buttons, videoPlayer, getCloseButton("Stop and close"));
+		mainLayout.addToNavbar(buttons);
+		mainLayout.setContent(videoPlayer);
+		mainLayout.setDrawerOpened(false);
 
 		return mainLayout;
 	}
 
-	private VerticalLayout createImageLayout(VerticalLayout mainLayout) {
+	private AppLayout createImageLayout(AppLayout mainLayout) {
 		Image image = new Image();
 		StreamResource resource = new StreamResource(
 				media.getName(),
 				new FileStreamFactory(media));
 		image.setSrc(resource);
 
-		image.setWidthFull();
-		image.setHeight("-1");
+		image.setHeight("90%");
+		image.setWidth("-1");
 
-		mainLayout.add(image, getCloseButton("Close"));
+		mainLayout.addToNavbar(getCloseButton("Close"));
+		mainLayout.setContent(image);
+		mainLayout.setDrawerOpened(false);
 
 		return mainLayout;
 	}
 
-	private VerticalLayout createTextLayout(VerticalLayout mainLayout) {
+	private AppLayout createTextLayout(AppLayout mainLayout) {
 		TextArea textArea = new TextArea();
 
 		try {
@@ -152,20 +149,24 @@ public class PlayerDialog extends Dialog {
 			e.printStackTrace();
 		}
 
-		textArea.setSizeFull();
+		mainLayout.addToNavbar(getCloseButton("Close"));
+		mainLayout.setContent(textArea);
+		mainLayout.setDrawerOpened(false);
 
-		mainLayout.add(textArea, getCloseButton("Close"));
+		textArea.setSizeFull();
 
 		return mainLayout;
 	}
 
-	private VerticalLayout createErrorLayout(VerticalLayout mainLayout) {
+	private AppLayout createErrorLayout(AppLayout mainLayout) {
 		Label errorText = new Label("File format not supported");
 		errorText.addComponentAsFirst(VaadinIcon.FROWN_O.create());
 
-		errorText.setSizeFull();
+		mainLayout.addToNavbar(getCloseButton("Close"));
+		mainLayout.setContent(errorText);
+		mainLayout.setDrawerOpened(false);
 
-		mainLayout.add(errorText, getCloseButton("Close"));
+		errorText.setSizeFull();
 
 		return mainLayout;
 	}

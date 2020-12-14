@@ -115,6 +115,7 @@ public class FileSystemDataProvider
 		if (ui != null) ui.getSession().access(() -> {
 			Application.LOGGER.log(System.Logger.Level.DEBUG, "Updating listener " + this);
 			this.refreshAll();
+			this.grid.getDataCommunicator().reset();
 		});
 	}
 

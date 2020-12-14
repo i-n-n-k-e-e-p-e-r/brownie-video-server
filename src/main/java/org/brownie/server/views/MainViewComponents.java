@@ -25,6 +25,7 @@ import org.brownie.server.recoder.VideoDecoder;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.Map;
 
 public class MainViewComponents {
     public static MenuBar createMenuBar(MainView mainView) {
@@ -40,7 +41,8 @@ public class MainViewComponents {
             });
 
             file.getSubMenu().addItem("Delete", e -> {
-                if (mainView.getFilesGrid() == null || mainView.getFilesGrid().getSelectedItems().size() == 0) {
+                if (mainView.getFilesGrid() == null
+                        || mainView.getFilesGrid().getSelectedItems().size() == 0) {
                     return;
                 }
 
@@ -70,8 +72,11 @@ public class MainViewComponents {
 
         MenuItem systemInformation = menuBar.addItem("System information",
                 e -> SystemLoadDialog.showSystemLoadDialog());
-
         systemInformation.addComponentAsFirst(VaadinIcon.INFO_CIRCLE_O.create());
+
+        MenuItem exit = menuBar.addItem("Exit",
+                e -> { if (menuBar.getUI().isPresent()) menuBar.getUI().get().getPage().reload(); });
+        exit.addComponentAsFirst(VaadinIcon.EXIT_O.create());
 
         return menuBar;
     }
@@ -152,12 +157,13 @@ public class MainViewComponents {
         playButton.addClickListener(playListener -> {
             final PlayerDialog dialog = new PlayerDialog(file, null, mainView);
             playButton.setEnabled(true);
-            dialog.setWidth(PlayerDialog.MIN_WIDTH);
             dialog.open();
         });
 
         playButton.setEnabled(true);
+        boolean encoding = false;
         if (VideoDecoder.getDecoder().isEncoding(file)) {
+            encoding = true;
             playButton.setEnabled(false);
             playButton.setText("Encoding...");
             playButton.setIcon(VaadinIcon.COGS.create());
@@ -168,12 +174,15 @@ public class MainViewComponents {
             playButton.setIcon(VaadinIcon.FROWN_O.create());
         }
 
+        Map.Entry<Component, Button> wrapper = CommonComponents.getDownloadButtonWrapper(
+                "Download",
+                VaadinIcon.DOWNLOAD.create(),
+                file);
+
+        if (encoding) wrapper.getValue().setEnabled(false);
         actionsLayout.add(
                 playButton,
-                CommonComponents.getDownloadButtonWrapper(
-                        "Download",
-                        VaadinIcon.DOWNLOAD.create(),
-                        file)
+                wrapper.getKey()
         );
 
         return actionsLayout;

@@ -10,6 +10,8 @@ import com.vaadin.flow.server.StreamResource;
 import org.vaadin.olli.FileDownloadWrapper;
 
 import java.io.File;
+import java.util.AbstractMap;
+import java.util.Map;
 
 public class CommonComponents {
 
@@ -23,17 +25,18 @@ public class CommonComponents {
         return button;
     }
 
-    public static Component getDownloadButtonWrapper(String text, Icon icon, File file) {
+    public static Map.Entry<Component, Button> getDownloadButtonWrapper(String text, Icon icon, File file) {
         Button button = createButton(text, icon, null);
+        button.setEnabled(true);
         if (file == null || !file.exists()) {
             button.setEnabled(false);
-            return button;
+            return new AbstractMap.SimpleEntry<>(null, button);
         }
 
         StreamResource resource = new StreamResource(file.getName(), new FileStreamFactory(file));
         FileDownloadWrapper buttonWrapper = new FileDownloadWrapper(resource);
         buttonWrapper.wrapComponent(button);
 
-        return buttonWrapper;
+        return new AbstractMap.SimpleEntry<>(buttonWrapper, button);
     }
 }

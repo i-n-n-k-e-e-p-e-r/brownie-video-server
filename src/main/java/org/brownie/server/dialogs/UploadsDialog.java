@@ -1,12 +1,12 @@
 package org.brownie.server.dialogs;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MultiFileBuffer;
 import org.brownie.server.Application;
@@ -15,18 +15,32 @@ import org.brownie.server.events.IEventListener;
 import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.recoder.VideoDecoder;
+import org.brownie.server.views.CommonComponents;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class UploadsDialog extends Dialog implements IEventListener {
 
     public static final int BUFFER_SIZE = 32 * 1024;
 
     private final Label discCapacity = new Label("");
+    private ComboBox<String> folders;
+    private MultiFileBuffer multiFileBuffer = null;
+    private String customSubFolder = "";
+    private Upload upload = null;
+    private final Button closeButton = CommonComponents.createButton("Close",
+            VaadinIcon.CLOSE_CIRCLE.create(),
+            e -> {
+        EventsManager.getManager().unregisterListener(this);
+        close();
+    });
 
     public UploadsDialog() {
         super();
@@ -38,27 +52,23 @@ public class UploadsDialog extends Dialog implements IEventListener {
 
         Label title = new Label("Media files upload");
         title.getStyle().set("font-weight", "bold");
-        TextField subDir = new TextField("Sub directory to move uploaded files");
-        subDir.setPlaceholder("Just one level directory");
-        subDir.setTitle("Sub directory to move uploaded files");
-        subDir.setValue("");
-        subDir.setWidthFull();
+
+        folders = new ComboBox<>("Sub directory for uploaded files");
+        folders.setWidthFull();
+        folders.setItems(getFolders());
+        folders.setAllowCustomValue(true);
+        folders.setPlaceholder("Type the name or choose");
+        folders.addCustomValueSetListener(event -> {
+            List<String> newValues = getFolders();
+            newValues.add(event.getDetail());
+            folders.setItems(newValues);
+            folders.setValue(event.getDetail());
+        });
+        folders.setValue("");
 
         updateDiscCapacity();
 
-        mainLayout.add(title, discCapacity, subDir);
-
-        MultiFileBuffer multiFileBuffer = new MultiFileBuffer();
-        Upload upload = new Upload(multiFileBuffer);
-        upload.addFinishedListener(e -> processFile(subDir.getValue(), e.getFileName(), multiFileBuffer));
-
-        Button close = new Button("Close", e -> {
-            EventsManager.getManager().unregisterListener(this);
-            close();
-        });
-        close.setIcon(VaadinIcon.CLOSE_CIRCLE.create());
-        close.setWidthFull();
-        mainLayout.add(upload, close);
+        mainLayout.add(title, discCapacity, folders);
 
         add(mainLayout);
         EventsManager.getManager().registerListener(this);
@@ -68,10 +78,33 @@ public class UploadsDialog extends Dialog implements IEventListener {
         this.setDraggable(false);
         this.setModal(true);
         this.setSizeUndefined();
+
+        this.addOpenedChangeListener(event -> {
+            if (event.isOpened()) {
+                multiFileBuffer = new MultiFileBuffer();
+                upload = new Upload(multiFileBuffer);
+                folders.focus();
+                upload.addFinishedListener(e -> processFile(folders.getValue(), e.getFileName(), multiFileBuffer));
+                mainLayout.add(upload, closeButton);
+            } else {
+                mainLayout.remove(upload);
+                mainLayout.remove(closeButton);
+            }
+        });
+    }
+
+    private List<String> getFolders() {
+        return Arrays.stream(Objects.requireNonNull(MediaDirectories.mediaDirectory.listFiles()))
+                .filter(File::isDirectory)
+                .map(File::getName)
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     private void processFile(String subDir, String uploadedFileName, MultiFileBuffer multiFileBuffer) {
         try {
+            if (subDir == null) subDir = "";
+
             Path pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath());
             if (subDir.trim().length() > 0) {
                 pathWithSubfolder = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
@@ -131,7 +164,10 @@ public class UploadsDialog extends Dialog implements IEventListener {
     @Override
     public void update(EventsManager.EVENT_TYPE eventType, Object[] params) {
         var ui = this.getUI().isPresent() ? this.getUI().get() : null;
-        if (ui != null) ui.getSession().access(this::updateDiscCapacity);
+        if (ui != null) ui.getSession().access(() -> {
+            updateDiscCapacity();
+            folders.setItems(getFolders());
+        });
     }
 
     @Override
