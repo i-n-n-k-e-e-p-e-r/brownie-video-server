@@ -7,7 +7,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -25,7 +24,6 @@ import org.brownie.server.views.MainView;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Map;
 
 public class PlayerDialog extends Dialog {
 
@@ -52,13 +50,16 @@ public class PlayerDialog extends Dialog {
 		AppLayout mainLayout = new AppLayout();
 
 		addOpenedChangeListener(e -> {
+			this.mainView.getFilesGrid().deselectAll();
 			if (e.isOpened()) {
 				Application.LOGGER.log(System.Logger.Level.DEBUG,
 						"Player opened " + this.hashCode() + ". User " + mainView.getCurrentUser().getName() + ".");
 			} else {
 				Application.LOGGER.log(System.Logger.Level.DEBUG,
 						"Player closed " + this.hashCode() + ". User " + mainView.getCurrentUser().getName() + ".");
+				this.mainView.getFilesGrid().focus();
 			}
+			this.mainView.getFilesGrid().select(media);
 		});
 
 		mainLayout.setPrimarySection(AppLayout.Section.NAVBAR);
@@ -88,8 +89,8 @@ public class PlayerDialog extends Dialog {
 		}
 	}
 
-	private Button getCloseButton(String text) {
-		Button closeButton = CommonComponents.createButton(text, VaadinIcon.CLOSE_CIRCLE.create(), e -> {
+	private Button getCloseButton() {
+		Button closeButton = CommonComponents.createButton("Close", VaadinIcon.CLOSE_CIRCLE.create(), e -> {
 			close();
 			e.getSource().setEnabled(true);
 		});
@@ -106,12 +107,13 @@ public class PlayerDialog extends Dialog {
 		Application.LOGGER.log(System.Logger.Level.DEBUG,
 				"New player " + this.hashCode() + " for user " + mainView.getCurrentUser().getName() + ".");
 
-		videoPlayer.setHeight("99%");
+		videoPlayer.setHeight("95%");
 		videoPlayer.setWidth("-1");
 
 		contentLayout.setPadding(true);
 		contentLayout.setAlignItems(Alignment.CENTER);
-		contentLayout.add(new Label(media.getName()), videoPlayer);
+		contentLayout.setSpacing(true);
+		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), videoPlayer);
 		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 		contentLayout.setWidth("99%");
 		contentLayout.setHeight("99%");
@@ -126,7 +128,9 @@ public class PlayerDialog extends Dialog {
 		buttons.setSpacing(true);
 		buttons.setMargin(true);
 		buttons.setWidthFull();
-		buttons.add(playButton, pauseButton, getCloseButton("Close"));
+		buttons.add(playButton,
+				pauseButton,
+				getCloseButton());
 
 		mainLayout.addToNavbar(buttons);
 		mainLayout.setContent(contentLayout);
@@ -143,17 +147,18 @@ public class PlayerDialog extends Dialog {
 				new FileStreamFactory(media));
 		image.setSrc(resource);
 
-		image.setHeight("99%");
+		image.setHeight("95%");
 		image.setWidth("-1");
 
 		contentLayout.setPadding(true);
 		contentLayout.setAlignItems(Alignment.CENTER);
-		contentLayout.add(new Label(media.getName()), image);
+		contentLayout.setSpacing(true);
+		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), image);
 		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 		contentLayout.setWidth("99%");
 		contentLayout.setHeight("99%");
 
-		mainLayout.addToNavbar(getCloseButton("Close"));
+		mainLayout.addToNavbar(getCloseButton());
 		mainLayout.setContent(contentLayout);
 		mainLayout.setDrawerOpened(false);
 
@@ -171,15 +176,17 @@ public class PlayerDialog extends Dialog {
 			e.printStackTrace();
 		}
 
-		textArea.setSizeFull();
+		textArea.setWidth("99%");
+		textArea.setHeight("99%");
 		contentLayout.setPadding(true);
 		contentLayout.setAlignItems(Alignment.CENTER);
-		contentLayout.add(new Label(media.getName()), textArea);
+		contentLayout.setSpacing(true);
+		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), textArea);
 		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 		contentLayout.setWidth("99%");
 		contentLayout.setHeight("99%");
 
-		mainLayout.addToNavbar(getCloseButton("Close"));
+		mainLayout.addToNavbar(getCloseButton());
 		mainLayout.setContent(contentLayout);
 		mainLayout.setDrawerOpened(false);
 
@@ -194,12 +201,14 @@ public class PlayerDialog extends Dialog {
 		errorText.setSizeFull();
 		contentLayout.setPadding(true);
 		contentLayout.setAlignItems(Alignment.CENTER);
-		contentLayout.add(new Label(media.getName()), errorText);
+		contentLayout.setSpacing(true);
+
+		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), errorText);
 		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
 		contentLayout.setWidth("99%");
 		contentLayout.setHeight("99%");
 
-		mainLayout.addToNavbar(getCloseButton("Close"));
+		mainLayout.addToNavbar(getCloseButton());
 		mainLayout.setContent(contentLayout);
 		mainLayout.setDrawerOpened(false);
 

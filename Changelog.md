@@ -6,4 +6,7 @@
 - Exit button added
 - Disables download button while encoding video
 - Method of getting MIME type changed
-- Main layout of application and player dialog changed to AppLayout
+- Main layout of application and file viewer dialog changed to AppLayout
+- Download added in file viewer dialog
+- Fav and logo icons added
+- Other cosmetic enhancements and changes

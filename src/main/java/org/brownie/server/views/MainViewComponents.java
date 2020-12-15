@@ -35,10 +35,7 @@ public class MainViewComponents {
             MenuItem file = menuBar.addItem("File");
             file.addComponentAsFirst(VaadinIcon.CLIPBOARD_TEXT.create());
 
-            file.getSubMenu().addItem("Uploads", e -> {
-                UploadsDialog dialog = new UploadsDialog();
-                dialog.open();
-            });
+            file.getSubMenu().addItem("Uploads", e -> UploadsDialog.showUploadsDialog());
 
             file.getSubMenu().addItem("Delete", e -> {
                 if (mainView.getFilesGrid() == null
@@ -121,7 +118,7 @@ public class MainViewComponents {
 
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
         if (mainView.getCurrentUser().getGroup() == User.GROUP.USER.ordinal())
-            treeGrid.setSelectionMode(Grid.SelectionMode.NONE);
+            treeGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
         final FileSystemDataProvider provider = new FileSystemDataProvider(treeGrid, MediaDirectories.mediaDirectory);
         // register for receiving updates from other UIs
@@ -174,10 +171,7 @@ public class MainViewComponents {
             playButton.setIcon(VaadinIcon.FROWN_O.create());
         }
 
-        Map.Entry<Component, Button> wrapper = CommonComponents.getDownloadButtonWrapper(
-                "Download",
-                VaadinIcon.DOWNLOAD.create(),
-                file);
+        Map.Entry<Component, Button> wrapper = CommonComponents.getDownloadButtonWrapper("Download", file);
 
         if (encoding) wrapper.getValue().setEnabled(false);
         actionsLayout.add(

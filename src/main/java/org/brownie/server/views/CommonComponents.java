@@ -6,6 +6,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.server.StreamResource;
 import org.vaadin.olli.FileDownloadWrapper;
 
@@ -25,8 +26,8 @@ public class CommonComponents {
         return button;
     }
 
-    public static Map.Entry<Component, Button> getDownloadButtonWrapper(String text, Icon icon, File file) {
-        Button button = createButton(text, icon, null);
+    public static Map.Entry<Component, Button> getDownloadButtonWrapper(String text, File file) {
+        Button button = createButton(text, VaadinIcon.DOWNLOAD.create(), null);
         button.setEnabled(true);
         if (file == null || !file.exists()) {
             button.setEnabled(false);
@@ -39,4 +40,5 @@ public class CommonComponents {
 
         return new AbstractMap.SimpleEntry<>(buttonWrapper, button);
     }
+
 }

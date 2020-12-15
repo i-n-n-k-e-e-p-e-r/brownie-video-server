@@ -18,7 +18,7 @@ Desktop and mobile layout.
 
 ## Run 
 ##### Maven
-1. java -jar ./target/brownie-video-server-VERSION.jar  
+1. java -jar ./target/brownie-video-server.jar  
 2. Go to localhost:8080  
 3. Try to login with any credential  
 4. Create new administrator user  

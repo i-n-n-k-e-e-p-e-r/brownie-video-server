@@ -31,9 +31,8 @@ public class UploadsDialog extends Dialog implements IEventListener {
     public static final int BUFFER_SIZE = 32 * 1024;
 
     private final Label discCapacity = new Label("");
-    private ComboBox<String> folders;
+    private final ComboBox<String> folders;
     private MultiFileBuffer multiFileBuffer = null;
-    private String customSubFolder = "";
     private Upload upload = null;
     private final Button closeButton = CommonComponents.createButton("Close",
             VaadinIcon.CLOSE_CIRCLE.create(),
@@ -149,6 +148,23 @@ public class UploadsDialog extends Dialog implements IEventListener {
                     "Error while uploading or processing files", ioException);
             ioException.printStackTrace();
         }
+    }
+
+    public static UploadsDialog showUploadsDialog() {
+        UploadsDialog dialog = new UploadsDialog();
+        dialog.setMinWidth("340px");
+        dialog.setMinHeight("320px");
+        dialog.setWidth("340px");
+        dialog.setHeight("-1");
+
+        dialog.setResizable(false);
+        dialog.setDraggable(false);
+        dialog.setCloseOnEsc(true);
+        dialog.setCloseOnOutsideClick(true);
+        dialog.setModal(true);
+        dialog.open();
+
+        return dialog;
     }
 
     public void updateDiscCapacity() {

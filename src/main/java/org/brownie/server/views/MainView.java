@@ -4,10 +4,13 @@ import com.brownie.videojs.VideoJS;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.login.LoginOverlay;
 import com.vaadin.flow.component.menubar.MenuBar;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.router.Route;
@@ -36,7 +39,8 @@ import java.io.File;
 @Route
 @Push(PushMode.AUTOMATIC)
 @PWA(name = "Brownie Video Server",
-        shortName = "BVS",
+        shortName = "Brownie",
+		iconPath = "img/icons/brownie.png",
         description = "Simple home video and files server",
         enableInstallPrompt = false)
 @CssImport("./styles/shared-styles.css")
@@ -84,12 +88,31 @@ public class MainView extends AppLayout {
     	LoginI18n i18n = LoginI18n.createDefault();
     	login.setI18n(i18n);
     	login.setForgotPasswordButtonVisible(false);
-    	login.setTitle("Welcome to Brownie Video Server");
-    	login.setDescription("Simple home video server");
+    	login.setTitle(getLoginTitle());
+    	login.setDescription("Simple home video and file server");
 
     	addToDrawer(login);
     	login.setOpened(true);
     }
+
+    private HorizontalLayout getLoginTitle() {
+		HorizontalLayout titleLayout = new HorizontalLayout();
+
+		Image logo = new Image("icons/brownie.png", "Brownie");
+		logo.setWidth("64px");
+		logo.setHeight("64px");
+
+		Label title = new Label("Welcome to Brownie Video Server");
+		title.getStyle().set("font-weight", "bold");
+		title.getStyle().set("font-size", "22px");
+
+		titleLayout.add(logo, title);
+		titleLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+		titleLayout.setSpacing(true);
+		titleLayout.setSizeFull();
+
+		return titleLayout;
+	}
     
     protected void initMainView() {
 		MediaDirectories.initDirectories();
