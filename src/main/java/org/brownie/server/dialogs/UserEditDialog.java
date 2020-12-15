@@ -23,7 +23,8 @@ public class UserEditDialog extends Dialog {
 	 */
 	private static final long serialVersionUID = 5620752939841369016L;
 	
-	public static final String MIN_WIDTH = "320px";
+	public static final String MIN_WIDTH = "360px";
+	public static final String MIN_HEIGHT = "320px";
 
 	private boolean edit;
 	private User user = null;
@@ -43,6 +44,9 @@ public class UserEditDialog extends Dialog {
 		setCloseOnEsc(true);
 
 		setMinWidth(MIN_WIDTH);
+		setMinHeight(MIN_HEIGHT);
+		setWidth(MIN_WIDTH);
+		setHeight("-1");
 	}
 
 	public UserEditDialog(boolean edit) {
@@ -59,6 +63,9 @@ public class UserEditDialog extends Dialog {
 		setCloseOnEsc(true);
 
 		setMinWidth(MIN_WIDTH);
+		setMinHeight(MIN_HEIGHT);
+		setWidth(MIN_WIDTH);
+		setHeight("-1");
 	}
 
 	private void setUser(User user) {

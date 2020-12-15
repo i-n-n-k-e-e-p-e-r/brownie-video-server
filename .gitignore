@@ -18,3 +18,4 @@ webpack.generated.js
 *.db
 uploads
 media_files
+brownie_server_logs.txt

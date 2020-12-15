@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class UsersDialog extends Dialog {
 
     public static final String MIN_WIDTH = "420px";
-    public static final String MIN_HEIGHT = "460px";
+    public static final String MIN_HEIGHT = "340px";
     private static final List<User> users = Collections.synchronizedList(new ArrayList<>());
     private static final List<Grid<User>> gridsForUpdate = Collections.synchronizedList(new ArrayList<>());
 
@@ -35,6 +35,8 @@ public class UsersDialog extends Dialog {
 
         this.setMinWidth(MIN_WIDTH);
         this.setMinHeight(MIN_HEIGHT);
+        this.setWidth("95%");
+        this.setHeight("95%");
         this.setCloseOnEsc(true);
         this.setCloseOnOutsideClick(true);
         this.setResizable(true);
@@ -127,24 +129,26 @@ public class UsersDialog extends Dialog {
 
     private void openNewDialog() {
         UserEditDialog dialog = new UserEditDialog(false);
-        dialog.setWidth(UserEditDialog.MIN_WIDTH);
+
         dialog.addOpenedChangeListener(newOpened -> {
             if (!newOpened.isOpened()) {
                 updateUsers();
             }
         });
+
         dialog.open();
     }
 
     private void openEditDialog(Grid<User> usersGrid) {
         if (usersGrid.getSelectedItems().size() == 0) return;
         UserEditDialog dialog = new UserEditDialog(usersGrid.getSelectedItems().iterator().next(), true);
-        dialog.setWidth(UserEditDialog.MIN_WIDTH);
+
         dialog.addOpenedChangeListener(editOpened -> {
             if (!editOpened.isOpened()) {
                 updateUsers();
             }
         });
+
         dialog.open();
     }
 

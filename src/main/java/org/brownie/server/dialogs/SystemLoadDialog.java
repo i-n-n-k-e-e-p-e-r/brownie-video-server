@@ -1,6 +1,7 @@
 package org.brownie.server.dialogs;
 
 import com.sun.management.OperatingSystemMXBean;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -20,7 +21,7 @@ public class SystemLoadDialog extends Dialog {
     private final OperatingSystemMXBean monitor = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
     private final Label name = new Label("Brownie video server");
     private final Label version = new Label("Version: N/A");
-    private final Label author = new Label("by Vladimir Senchikhin");
+//    private final Label author = new Label("by Vladimir Senchikhin");
     private final Label license = new Label("License: Apache 2.0");
     private final Label cpuLoad = new Label("CPU load: N/A");
     private final Label memoryUsage = new Label("Memory usage: N/A");
@@ -45,13 +46,18 @@ public class SystemLoadDialog extends Dialog {
         closeButton.setWidthFull();
 
         version.setText("Server version: " + this.getClass().getPackage().getImplementationVersion());
+        name.getStyle().set("font-weight", "bold");
+        Html author = new Html("<div>by <a href=\"https://github.com/i-n-n-k-e-e-p-e-r\" title=\"by Vladimir Senchikhin\">Vladimir Senchikhin</a></div>");
+        Html icon = new Html("<div>Application icon by <a href=\"https://www.flaticon.com/authors/photo3idea-studio\" title=\"photo3idea_studio\">photo3idea_studio</a> from <a href=\"https://www.flaticon.com/\" title=\"Flaticon\">www.flaticon.com</a></div>");
+        Html vaadin = new Html("<div>Powered by <a href=\"https://vaadin.com\" title=\"Powered by Vaadin\">Vaadin</a></div>");
         mainLayout.add(title,
                 cpuLoad,
                 memoryUsage,
                 discUsage,
                 name,
                 author,
-                version,
+                icon,
+                vaadin,
                 license,
                 closeButton);
 
@@ -71,10 +77,13 @@ public class SystemLoadDialog extends Dialog {
 
     public static SystemLoadDialog showSystemLoadDialog() {
         SystemLoadDialog dialog = new SystemLoadDialog();
-        dialog.setMinWidth("360px");
-        dialog.setWidth("360px");
-        dialog.setResizable(true);
-        dialog.setDraggable(true);
+        dialog.setMinWidth("340px");
+        dialog.setMinHeight("320px");
+        dialog.setWidth("340px");
+        dialog.setHeight("-1");
+
+        dialog.setResizable(false);
+        dialog.setDraggable(false);
         dialog.setCloseOnEsc(true);
         dialog.setCloseOnOutsideClick(true);
         dialog.setModal(true);

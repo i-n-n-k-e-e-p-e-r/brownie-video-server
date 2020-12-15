@@ -115,6 +115,7 @@ public class FileSystemDataProvider
 		if (ui != null) ui.getSession().access(() -> {
 			Application.LOGGER.log(System.Logger.Level.DEBUG, "Updating listener " + this);
 			this.refreshAll();
+			this.grid.getDataCommunicator().reset();
 		});
 	}
 
@@ -162,7 +163,7 @@ public class FileSystemDataProvider
 		return result.stream();
 	}
 
-	public static String getMIMEType(File file) {
+	public static String getMIMETypeFromURLConnections(File file) {
 		FileNameMap fileNameMap = URLConnection.getFileNameMap();
 
 		String mimeType = null;
@@ -170,7 +171,7 @@ public class FileSystemDataProvider
 			mimeType = fileNameMap.getContentTypeFor(file.getName());
 		} catch (Exception ex) {
 			Application.LOGGER.log(System.Logger.Level.ERROR,
-					"Error while getting mime type in FileSystemDataProvider", ex);
+					"Error while getting MIME type in getMIMETypeFromURLConnections", ex);
 		} finally {
 			if (mimeType == null || mimeType.length() == 0) mimeType = "";
 		}
@@ -178,20 +179,34 @@ public class FileSystemDataProvider
 		return mimeType;
 	}
 
+	public static String getMIMETypeFromFiles(File file) {
+		String result = null;
+		try {
+			result = Files.probeContentType(file.toPath());
+		} catch (IOException e) {
+			Application.LOGGER.log(System.Logger.Level.ERROR,
+					"Error while getting MIME type in getMIMETypeFromFiles", e);
+		}
+		if (result == null) {
+			return "";
+		}
+		return result;
+	}
+
 	public static boolean isVideo(File file) {
-		return getMIMEType(file).contains("video");
+		return getMIMETypeFromFiles(file).contains("video");
 	}
 
 	public static boolean isImage(File file) {
-		return getMIMEType(file).contains("image");
+		return getMIMETypeFromFiles(file).contains("image");
 	}
 
 	public static boolean isAudio(File file) {
-		return getMIMEType(file).contains("audio");
+		return getMIMETypeFromFiles(file).contains("audio");
 	}
 
 	public static boolean isText(File file) {
-		return getMIMEType(file).contains("text");
+		return getMIMETypeFromFiles(file).contains("text");
 	}
 
 	public static boolean isDataFile(File file) {

@@ -3,7 +3,7 @@
     <groupId>org.brownie.server</groupId>
     <artifactId>brownie-video-server</artifactId>
     <name>Brownie Video Server</name>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -168,6 +168,7 @@
 
     <build>
         <defaultGoal>spring-boot:run</defaultGoal>
+        <finalName>${artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -216,6 +217,7 @@
             </dependencies>
 
             <build>
+                <finalName>${artifactId}</finalName>
                 <plugins>
                     <plugin>
                         <groupId>org.springframework.boot</groupId>
@@ -244,6 +246,7 @@
         <profile>
             <id>it</id>
             <build>
+                <finalName>${artifactId}</finalName>
                 <plugins>
                     <plugin>
                         <groupId>org.springframework.boot</groupId>

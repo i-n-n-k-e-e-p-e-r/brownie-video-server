@@ -4,11 +4,13 @@ package org.brownie.server.dialogs;
 import com.brownie.videojs.FileStreamFactory;
 import com.brownie.videojs.VideoJS;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -30,8 +32,6 @@ public class PlayerDialog extends Dialog {
 	 */
 	private static final long serialVersionUID = -8694753283443376902L;
 
-	public static String MIN_WIDTH = "360px";
-
 	private File media;
 	private File poster;
 	private final MainView mainView;
@@ -44,29 +44,27 @@ public class PlayerDialog extends Dialog {
 		this.mainView = mainView;
 
 		setModal(true);
-		setDraggable(true);
-		setResizable(true);
-		setCloseOnOutsideClick(false);
+		setDraggable(false);
+		setResizable(false);
 
-		VerticalLayout mainLayout = new VerticalLayout();
-		mainLayout.setAlignItems(Alignment.CENTER);
-		mainLayout.setSpacing(true);
-		mainLayout.setPadding(true);
-		mainLayout.setSizeUndefined();
+		AppLayout mainLayout = new AppLayout();
 
 		addOpenedChangeListener(e -> {
+			this.mainView.getFilesGrid().deselectAll();
 			if (e.isOpened()) {
 				Application.LOGGER.log(System.Logger.Level.DEBUG,
 						"Player opened " + this.hashCode() + ". User " + mainView.getCurrentUser().getName() + ".");
 			} else {
 				Application.LOGGER.log(System.Logger.Level.DEBUG,
 						"Player closed " + this.hashCode() + ". User " + mainView.getCurrentUser().getName() + ".");
+				this.mainView.getFilesGrid().focus();
 			}
+			this.mainView.getFilesGrid().select(media);
 		});
 
-		Label title = new Label(media.getName());
-		title.getStyle().set("font-weight", "bold");
-		mainLayout.add(title);
+		mainLayout.setPrimarySection(AppLayout.Section.NAVBAR);
+		setWidth("100%");
+		setHeight("100%");
 
 		if (FileSystemDataProvider.isVideo(media) || FileSystemDataProvider.isAudio(media)) {
 			add(createVideoLayout(mainLayout));
@@ -80,18 +78,17 @@ public class PlayerDialog extends Dialog {
 
 		if (FileSystemDataProvider.isText(media) ) {
 			add(createTextLayout(mainLayout));
+			setResizable(true);
 			return;
 		}
 
 		if (FileSystemDataProvider.isDataFile(media) ) {
 			add(createErrorLayout(mainLayout));
 		}
-
-		this.setSizeUndefined();
 	}
 
-	private Button getCloseButton(String text) {
-		Button closeButton = CommonComponents.createButton(text, VaadinIcon.CLOSE_CIRCLE.create(), e -> {
+	private Button getCloseButton() {
+		Button closeButton = CommonComponents.createButton("Close", VaadinIcon.CLOSE_CIRCLE.create(), e -> {
 			close();
 			e.getSource().setEnabled(true);
 		});
@@ -102,13 +99,23 @@ public class PlayerDialog extends Dialog {
 		return closeButton;
 	}
 
-	private VerticalLayout createVideoLayout(VerticalLayout mainLayout) {
+	private AppLayout createVideoLayout(AppLayout mainLayout) {
+		VerticalLayout contentLayout = new VerticalLayout();
 		VideoJS videoPlayer = new VideoJS(UI.getCurrent().getSession(), media, poster);
 		Application.LOGGER.log(System.Logger.Level.DEBUG,
 				"New player " + this.hashCode() + " for user " + mainView.getCurrentUser().getName() + ".");
 
-		videoPlayer.setWidthFull();
-		videoPlayer.setHeight("-1");
+		videoPlayer.setHeight("95%");
+		videoPlayer.setWidth("-1");
+
+		contentLayout.setPadding(true);
+		contentLayout.setAlignItems(Alignment.CENTER);
+		contentLayout.setSpacing(true);
+		contentLayout.setMargin(true);
+		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), videoPlayer);
+		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+		contentLayout.setWidth("98%");
+		contentLayout.setHeight("94%");
 
 		Button playButton = CommonComponents.createButton("Play", VaadinIcon.PLAY.create(), e -> videoPlayer.play());
 		playButton.setWidthFull();
@@ -120,29 +127,46 @@ public class PlayerDialog extends Dialog {
 		buttons.setSpacing(true);
 		buttons.setMargin(true);
 		buttons.setWidthFull();
-		buttons.add(playButton, pauseButton);
+		buttons.add(playButton,
+				pauseButton,
+				getCloseButton());
 
-		mainLayout.add(buttons, videoPlayer, getCloseButton("Stop and close"));
+		mainLayout.addToNavbar(buttons);
+		mainLayout.setContent(contentLayout);
+		mainLayout.setDrawerOpened(false);
 
 		return mainLayout;
 	}
 
-	private VerticalLayout createImageLayout(VerticalLayout mainLayout) {
+	private AppLayout createImageLayout(AppLayout mainLayout) {
+		VerticalLayout contentLayout = new VerticalLayout();
 		Image image = new Image();
 		StreamResource resource = new StreamResource(
 				media.getName(),
 				new FileStreamFactory(media));
 		image.setSrc(resource);
 
-		image.setWidthFull();
-		image.setHeight("-1");
+		image.setHeight("95%");
+		image.setWidth("-1");
 
-		mainLayout.add(image, getCloseButton("Close"));
+		contentLayout.setPadding(true);
+		contentLayout.setAlignItems(Alignment.CENTER);
+		contentLayout.setSpacing(true);
+		contentLayout.setMargin(true);
+		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), image);
+		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+		contentLayout.setWidth("98%");
+		contentLayout.setHeight("94%");
+
+		mainLayout.addToNavbar(getCloseButton());
+		mainLayout.setContent(contentLayout);
+		mainLayout.setDrawerOpened(false);
 
 		return mainLayout;
 	}
 
-	private VerticalLayout createTextLayout(VerticalLayout mainLayout) {
+	private AppLayout createTextLayout(AppLayout mainLayout) {
+		VerticalLayout contentLayout = new VerticalLayout();
 		TextArea textArea = new TextArea();
 
 		try {
@@ -153,19 +177,40 @@ public class PlayerDialog extends Dialog {
 		}
 
 		textArea.setSizeFull();
+		contentLayout.setPadding(true);
+		contentLayout.setAlignItems(Alignment.CENTER);
+		contentLayout.setSpacing(true);
+		contentLayout.setMargin(true);
+		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), textArea);
+		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+		contentLayout.setWidth("98%");
+		contentLayout.setHeight("94%");
 
-		mainLayout.add(textArea, getCloseButton("Close"));
+		mainLayout.addToNavbar(getCloseButton());
+		mainLayout.setContent(contentLayout);
+		mainLayout.setDrawerOpened(false);
 
 		return mainLayout;
 	}
 
-	private VerticalLayout createErrorLayout(VerticalLayout mainLayout) {
+	private AppLayout createErrorLayout(AppLayout mainLayout) {
+		VerticalLayout contentLayout = new VerticalLayout();
 		Label errorText = new Label("File format not supported");
 		errorText.addComponentAsFirst(VaadinIcon.FROWN_O.create());
 
 		errorText.setSizeFull();
+		contentLayout.setPadding(true);
+		contentLayout.setAlignItems(Alignment.CENTER);
+		contentLayout.setSpacing(true);
 
-		mainLayout.add(errorText, getCloseButton("Close"));
+		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), errorText);
+		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+		contentLayout.setWidth("98%");
+		contentLayout.setHeight("94%");
+
+		mainLayout.addToNavbar(getCloseButton());
+		mainLayout.setContent(contentLayout);
+		mainLayout.setDrawerOpened(false);
 
 		return mainLayout;
 	}
