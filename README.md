@@ -13,7 +13,7 @@ Desktop and mobile layout.
 
 ##### Docker
 1. Clone this repository
-2. docker build -t brownie-video-server PATH_TO_THIS_REPO_DIRECTORY
+2. docker build --no-cache -t brownie-video-server PATH_TO_DOCKER_FILE_OF_THIS_REPO
 
 
 ## Run 
