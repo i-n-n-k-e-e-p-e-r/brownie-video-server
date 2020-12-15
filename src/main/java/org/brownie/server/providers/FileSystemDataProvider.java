@@ -240,13 +240,13 @@ public class FileSystemDataProvider
 							"Original file deleted '" + original.getAbsolutePath() + "'");
 				} else {
 					Application.LOGGER.log(System.Logger.Level.ERROR,
-							"Can't delete folder '" +
+							"Can't delete file '" +
 									Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
 				}
 			}
 
 			File[] uploadedFiles = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().listFiles();
-			if ((uploadedFiles == null || uploadedFiles.length == 0)) {
+			if ((uploadedFiles == null || uploadedFiles.length == 0) && folderName.trim().length() > 0) {
 				if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().delete()) {
 					Application.LOGGER.log(System.Logger.Level.INFO,
 							"Folder deleted '" +
