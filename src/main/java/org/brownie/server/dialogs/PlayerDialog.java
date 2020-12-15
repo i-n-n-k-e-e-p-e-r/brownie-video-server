@@ -63,8 +63,8 @@ public class PlayerDialog extends Dialog {
 		});
 
 		mainLayout.setPrimarySection(AppLayout.Section.NAVBAR);
-		this.setWidth("-1");
-		this.setHeight("-1");
+		setWidth("100%");
+		setHeight("100%");
 
 		if (FileSystemDataProvider.isVideo(media) || FileSystemDataProvider.isAudio(media)) {
 			add(createVideoLayout(mainLayout));
@@ -79,8 +79,6 @@ public class PlayerDialog extends Dialog {
 		if (FileSystemDataProvider.isText(media) ) {
 			add(createTextLayout(mainLayout));
 			setResizable(true);
-			setWidth("100%");
-			setHeight("100%");
 			return;
 		}
 
@@ -113,10 +111,11 @@ public class PlayerDialog extends Dialog {
 		contentLayout.setPadding(true);
 		contentLayout.setAlignItems(Alignment.CENTER);
 		contentLayout.setSpacing(true);
+		contentLayout.setMargin(true);
 		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), videoPlayer);
 		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-		contentLayout.setWidth("99%");
-		contentLayout.setHeight("99%");
+		contentLayout.setWidth("98%");
+		contentLayout.setHeight("94%");
 
 		Button playButton = CommonComponents.createButton("Play", VaadinIcon.PLAY.create(), e -> videoPlayer.play());
 		playButton.setWidthFull();
@@ -153,10 +152,11 @@ public class PlayerDialog extends Dialog {
 		contentLayout.setPadding(true);
 		contentLayout.setAlignItems(Alignment.CENTER);
 		contentLayout.setSpacing(true);
+		contentLayout.setMargin(true);
 		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), image);
 		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-		contentLayout.setWidth("99%");
-		contentLayout.setHeight("99%");
+		contentLayout.setWidth("98%");
+		contentLayout.setHeight("94%");
 
 		mainLayout.addToNavbar(getCloseButton());
 		mainLayout.setContent(contentLayout);
@@ -176,15 +176,15 @@ public class PlayerDialog extends Dialog {
 			e.printStackTrace();
 		}
 
-		textArea.setWidth("99%");
-		textArea.setHeight("99%");
+		textArea.setSizeFull();
 		contentLayout.setPadding(true);
 		contentLayout.setAlignItems(Alignment.CENTER);
 		contentLayout.setSpacing(true);
+		contentLayout.setMargin(true);
 		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), textArea);
 		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-		contentLayout.setWidth("99%");
-		contentLayout.setHeight("99%");
+		contentLayout.setWidth("98%");
+		contentLayout.setHeight("94%");
 
 		mainLayout.addToNavbar(getCloseButton());
 		mainLayout.setContent(contentLayout);
@@ -205,8 +205,8 @@ public class PlayerDialog extends Dialog {
 
 		contentLayout.add(CommonComponents.getDownloadButtonWrapper(media.getName(), media).getKey(), errorText);
 		contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-		contentLayout.setWidth("99%");
-		contentLayout.setHeight("99%");
+		contentLayout.setWidth("98%");
+		contentLayout.setHeight("94%");
 
 		mainLayout.addToNavbar(getCloseButton());
 		mainLayout.setContent(contentLayout);

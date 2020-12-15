@@ -3,7 +3,7 @@
     <groupId>org.brownie.server</groupId>
     <artifactId>brownie-video-server</artifactId>
     <name>Brownie Video Server</name>
-    <version>1.0.1r</version>
+    <version>1.0.1.beta</version>
     <packaging>jar</packaging>
 
     <properties>
