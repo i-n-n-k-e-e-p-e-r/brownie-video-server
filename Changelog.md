@@ -2,6 +2,8 @@
 ##### Fix
 - Fixed issue with cached file buffer while uploading
 ##### Fiches
-- Added combobox with created folders to upload dialog
+- Added combo box with created folders to upload dialog
 - Exit button added
 - Disables download button while encoding video
+- Method of getting MIME type changed
+- Main layout of application and player dialog changed to AppLayout

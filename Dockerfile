@@ -10,7 +10,7 @@ RUN mvn vaadin:build-frontend
 RUN mvn -e clean package -Pproduction
 WORKDIR /
 RUN mkdir /server
-RUN cp /brownie-video-server/target/brownie-video-server-1.0.0.jar /server/server.jar
+RUN cp /brownie-video-server/target/brownie-video-server.jar /server/server.jar
 RUN useradd -m brownie
 RUN chown -R brownie /server
 USER brownie
