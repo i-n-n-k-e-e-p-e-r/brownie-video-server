@@ -184,10 +184,10 @@ public class UploadsDialog extends Dialog implements IEventListener {
         UploadsDialog dialog = new UploadsDialog();
         dialog.setMinWidth("340px");
         dialog.setMinHeight("320px");
-        dialog.setWidth("340px");
-        dialog.setHeight("-1");
+        dialog.setWidth("95%");
+        dialog.setHeight("95%");
 
-        dialog.setResizable(false);
+        dialog.setResizable(true);
         dialog.setDraggable(false);
         dialog.setCloseOnEsc(true);
         dialog.setCloseOnOutsideClick(true);
