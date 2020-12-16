@@ -40,7 +40,7 @@ import java.io.File;
 @Push(PushMode.AUTOMATIC)
 @PWA(name = "Brownie Video Server",
         shortName = "Brownie",
-		iconPath = "img/icons/brownie.png",
+		iconPath = "icons/brownie.png",
         description = "Simple home video and files server",
         enableInstallPrompt = false)
 @CssImport("./styles/shared-styles.css")
