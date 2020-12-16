@@ -13,7 +13,7 @@ public class MediaDirectories {
     public static File mediaDirectory;
     public static File uploadsDirectory;
 
-    public static void initDirectories() {
+    public static synchronized void initDirectories() {
         mediaDirectory = Paths.get("media_files").toFile();
         uploadsDirectory = Paths.get("uploads").toFile();
 
@@ -57,18 +57,51 @@ public class MediaDirectories {
         }
     }
 
-    public static Path createSubDirectoryInMedias(String folderName) {
-        Path subDirectory = Paths.get(MediaDirectories.mediaDirectory.getAbsolutePath(), folderName);
-        if (!subDirectory.toFile().exists()) {
-            if (subDirectory.toFile().mkdir()) {
+    public static synchronized Path createSubFolder(File root, String subFolder) {
+        if (!root.isDirectory()) return null;
+        if (!root.exists()) {
+            if (root.mkdirs()) {
                 Application.LOGGER.log(System.Logger.Level.INFO,
-                        "Created sub directory '" + subDirectory.toFile().getAbsolutePath() + "'");
+                        "Root for sub folder created '" + root.getAbsolutePath() + "'");
             } else {
-                Application.LOGGER.log(System.Logger.Level.WARNING,
-                        "Can't create sub directory '" + subDirectory.toFile().getAbsolutePath() + "'");
+                Application.LOGGER.log(System.Logger.Level.ERROR,
+                        "Can't create root folder for sub folder '" + root.getAbsolutePath() + "'");
             }
-            EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
         }
-        return subDirectory;
+        if (subFolder == null) subFolder = "";
+        if (subFolder.trim().length() == 0) subFolder = "";
+        if (subFolder.length() == 0) return Paths.get(root.getAbsolutePath());
+
+        Path pathWithSubfolder = Paths.get(root.getAbsolutePath(), subFolder);
+
+        if (!pathWithSubfolder.toFile().exists()) {
+            if (pathWithSubfolder.toFile().mkdir()) {
+                Application.LOGGER.log(System.Logger.Level.INFO,
+                        "Sub folder created '" + pathWithSubfolder.toFile() + "'");
+            } else {
+                Application.LOGGER.log(System.Logger.Level.ERROR,
+                        "Can't create sub folder '" + pathWithSubfolder.toFile() + "'");
+            }
+        }
+
+        EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
+
+        return pathWithSubfolder;
+    }
+
+    public static synchronized void clearUploadsSubFolder(String folderName) {
+        File[] uploadedFiles = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().listFiles();
+        if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().exists() &&
+                uploadedFiles != null && uploadedFiles.length == 0) {
+            if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().delete()) {
+                Application.LOGGER.log(System.Logger.Level.INFO,
+                        "Folder deleted '" +
+                                Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
+            } else {
+                Application.LOGGER.log(System.Logger.Level.ERROR,
+                        "Can't delete folder '" +
+                                Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
+            }
+        }
     }
 }
