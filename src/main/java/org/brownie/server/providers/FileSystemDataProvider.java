@@ -1,5 +1,6 @@
 package org.brownie.server.providers;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.SortOrderProvider;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.QuerySortOrder;
@@ -110,20 +111,71 @@ public class FileSystemDataProvider
 	}
 
 	@Override
-	public void update(EventsManager.EVENT_TYPE eventType, Object[] params) {
-		var ui = grid.getUI().isPresent() ? grid.getUI().get() : null;
-		if (ui != null) ui.getSession().access(() -> {
-			Application.LOGGER.log(System.Logger.Level.DEBUG, "Updating listener " + this);
-			this.refreshAll();
-			this.grid.getDataCommunicator().reset();
-		});
+	public void update(EventsManager.EVENT_TYPE eventType, Object... params) {
+		processEvent(grid.getUI().isPresent() ? grid.getUI().get() : null,
+				eventType,
+				getAllGridItems(),
+				params);
+	}
+
+	private LinkedList<File> getAllGridItems() {
+		LinkedList<File> gridItems = new LinkedList<>();
+		List<File> roots = null;
+		List<File[]> leaves = null;
+		try {
+			roots = grid.getDataCommunicator()
+					.fetchFromProvider(0, grid.getDataCommunicator().getDataProviderSize())
+					.collect(Collectors.toList());
+			gridItems.addAll(roots);
+
+			leaves = roots.stream().filter(File::isDirectory).map(File::listFiles).collect(Collectors.toList());
+			leaves.forEach(f -> gridItems.addAll(Arrays.stream(f).collect(Collectors.toList())));
+		} finally {
+			if (roots != null) roots.clear();
+			if (leaves != null) leaves.clear();
+		}
+
+		return gridItems;
+	}
+
+	private void processEvent(UI ui, EventsManager.EVENT_TYPE eventType, List<File> gridItems, Object... params) {
+		Application.LOGGER.log(System.Logger.Level.DEBUG, "Updating FileSystemDataProvider " + this);
+
+		switch(eventType) {
+			case ENCODING_STARTED:
+			case ENCODING_FINISHED:
+			case FILE_RENAMED: {
+				Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
+				for (var f : gridItems) {
+					for (var o : forUpdate) {
+						if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
+							if (ui != null) ui.access(() -> refreshItem(f));
+							break;
+						}
+					}
+				}
+
+				break;
+			}
+			case FILE_CREATED:
+			case FILE_DELETED:
+			case FILE_MOVED: {
+				if (ui != null) ui.access(this::refreshAll);
+				break;
+			}
+
+			default : break;
+		}
 	}
 
 	@Override
 	public List<EventsManager.EVENT_TYPE> getEventTypes() {
 		ArrayList<EventsManager.EVENT_TYPE> types = new ArrayList<>();
 
-		types.add(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED);
+		types.add(EventsManager.EVENT_TYPE.FILE_MOVED);
+		types.add(EventsManager.EVENT_TYPE.FILE_RENAMED);
+		types.add(EventsManager.EVENT_TYPE.FILE_DELETED);
+		types.add(EventsManager.EVENT_TYPE.FILE_CREATED);
 		types.add(EventsManager.EVENT_TYPE.ENCODING_STARTED);
 		types.add(EventsManager.EVENT_TYPE.ENCODING_FINISHED);
 
@@ -216,11 +268,21 @@ public class FileSystemDataProvider
 	public static void copyUploadedFile(String folderName, File original) {
 		if (original == null || folderName == null) {
 			Application.LOGGER.log(System.Logger.Level.ERROR,
-					"Can't copy file. Sub directory or original file is null");
+					"Can't copy file. Sub directory or original file is null.");
+			if (original != null && original.delete()) {
+				Application.LOGGER.log(System.Logger.Level.ERROR,
+						"Original file deleted '" + original.getAbsolutePath() + "'");
+			}
 			return;
 		}
 
-		Path subDirectory = MediaDirectories.createSubDirectoryInMedias(folderName.trim());
+		Path subDirectory = MediaDirectories.createSubFolder(MediaDirectories.mediaDirectory, folderName.trim());
+		if (subDirectory == null) {
+			Application.LOGGER.log(System.Logger.Level.ERROR,
+					"Can't copy file. Root directory is null.");
+			return;
+		}
+
 		File uniqueFileName = FileSystemDataProvider.getUniqueFileName(
 				Paths.get(subDirectory.toFile().getAbsolutePath(), original.getName()).toFile());
 
@@ -245,20 +307,13 @@ public class FileSystemDataProvider
 				}
 			}
 
-			File[] uploadedFiles = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().listFiles();
-			if ((uploadedFiles == null || uploadedFiles.length == 0) && folderName.trim().length() > 0) {
-				if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().delete()) {
-					Application.LOGGER.log(System.Logger.Level.INFO,
-							"Folder deleted '" +
-									Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
-				} else {
-					Application.LOGGER.log(System.Logger.Level.ERROR,
-							"Can't delete folder '" +
-									Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
-				}
+			if (folderName.trim().length() > 0) {
+				MediaDirectories.clearUploadsSubFolder(folderName.trim());
 			}
 
-			EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
+			if (Objects.requireNonNull(subDirectory.toFile().listFiles()).length == 0) {
+				EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED);
+			}
 		}
 	}
 

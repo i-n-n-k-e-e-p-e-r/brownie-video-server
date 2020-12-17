@@ -8,7 +8,10 @@ import java.util.*;
 public class EventsManager {
 
     public enum EVENT_TYPE {
-        FILE_SYSTEM_CHANGED,
+        FILE_CREATED,
+        FILE_MOVED,
+        FILE_DELETED,
+        FILE_RENAMED,
         ENCODING_STARTED,
         ENCODING_FINISHED,
         PLAYER_OPENED,
@@ -32,7 +35,7 @@ public class EventsManager {
         return manager;
     }
 
-    public void registerListener(@NotNull IEventListener listener) {
+    public synchronized void registerListener(@NotNull IEventListener listener) {
         if (listener.getEventTypes() == null || listener.getEventTypes().size() == 0) return;
 
         listener.getEventTypes().forEach(eventType ->
@@ -42,7 +45,7 @@ public class EventsManager {
         Application.LOGGER.log(System.Logger.Level.DEBUG, "Listener registered " + listener);
     }
 
-    public void unregisterListener(@NotNull IEventListener listener) {
+    public synchronized void unregisterListener(@NotNull IEventListener listener) {
         if (listener.getEventTypes() == null || listener.getEventTypes().size() == 0) return;
 
         listener.getEventTypes().forEach(eventType ->
@@ -52,7 +55,7 @@ public class EventsManager {
         Application.LOGGER.log(System.Logger.Level.DEBUG, "Listener unregistered " + listener);
     }
 
-    public void notifyAllListeners(EVENT_TYPE eventType, Object[] params) {
+    public synchronized void notifyAllListeners(EVENT_TYPE eventType, Object... params) {
         Application.LOGGER.log(System.Logger.Level.DEBUG, "Notify all listeners");
         new Thread(() -> listeners.computeIfAbsent(eventType,
                 k -> Collections.synchronizedList(new ArrayList<>()))

@@ -24,8 +24,10 @@ import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.recoder.VideoDecoder;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 public class MainViewComponents {
     public static MenuBar createMenuBar(MainView mainView) {
@@ -49,11 +51,13 @@ public class MainViewComponents {
                 cd.setHeader("Are you shure?");
                 cd.setText("Selected files and folders will be deleted.");
                 cd.addConfirmListener(event -> {
+                    Object[] toDelete = null;
                     if (mainView.getFilesGrid() != null) {
+                        toDelete = new Object[mainView.getFilesGrid().getSelectedItems().size()];
                         mainView.getFilesGrid().getSelectedItems().forEach(
                                 FileSystemDataProvider::deleteFileOrDirectory);
                     }
-                    EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
+                    EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_DELETED, toDelete);
                     cd.close();
                 });
                 cd.addRejectListener(event -> cd.close());

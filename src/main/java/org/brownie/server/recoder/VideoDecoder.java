@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,18 +52,28 @@ public class VideoDecoder {
     }
 
     public synchronized void addFileToQueue(String folderName, File source) {
-        Path subDirectory = MediaDirectories.createSubDirectoryInMedias(folderName);
-        File uniqueFileName = FileSystemDataProvider.getUniqueFileName(
-                Paths.get(subDirectory.toFile().getAbsolutePath(), source.getName()).toFile());
-        final File targetFile = changeExtension(uniqueFileName, OUTPUT_VIDEO_FORMAT);
+        Path subDirectory = MediaDirectories.createSubFolder(MediaDirectories.mediaDirectory, folderName);
 
-        EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_STARTED, null);
+        if (subDirectory == null) {
+            if (source.delete()) {
+                Application.LOGGER.log(System.Logger.Level.ERROR,
+                        "Root folder is null. File deleted '" + source.getAbsolutePath() + "'");
+            } else {
+                Application.LOGGER.log(System.Logger.Level.ERROR,
+                        "Root folder is null. Can't delete file '" + source.getAbsolutePath() + "'");
+            }
 
-        queue.add(targetFile.getAbsolutePath());
-        Application.LOGGER.log(System.Logger.Level.INFO,
-                "Files in queue " + queue.size() + ". Added '" + targetFile.getAbsolutePath() + "'");
+            if (folderName.trim().length() > 0) {
+                MediaDirectories.clearUploadsSubFolder(folderName.trim());
+            }
 
-        executor.submit(new DecodingTask(folderName, source, targetFile));
+            return;
+        }
+        final File targetFile = FileSystemDataProvider.getUniqueFileName(
+                Paths.get(subDirectory.toFile().getAbsolutePath(),
+                        changeExtension(source, OUTPUT_VIDEO_FORMAT).getName()).toFile());
+
+        executor.submit(new DecodingTask(folderName, subDirectory, source, targetFile));
     }
 
     public synchronized boolean isEncoding(File file) {
@@ -79,7 +90,7 @@ public class VideoDecoder {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Can't create file '" + source.getAbsolutePath());
             }
-            EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED, null);
+            EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED, target);
         }
 
         Encoder encoder = new Encoder();
@@ -132,16 +143,23 @@ public class VideoDecoder {
         private final String folderName;
         private final File source;
         private final File targetFile;
+        private final Path subDirectory;
 
-        public DecodingTask(String folderName, File source, File targetFile) {
+        public DecodingTask(String folderName, Path subDirectory, File source, File targetFile) {
             this.folderName = folderName;
             this.source = source;
             this.targetFile = targetFile;
+            this.subDirectory = subDirectory;
         }
 
         @Override
         public void run() {
             try {
+                queue.add(targetFile.getAbsolutePath());
+                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_STARTED, targetFile);
+
+                Application.LOGGER.log(System.Logger.Level.INFO,
+                        "Files in queue " + queue.size() + ". Added '" + targetFile.getAbsolutePath() + "'");
                 String startMsg = "Encoding STARTED to file " + targetFile.getAbsolutePath();
                 Application.LOGGER.log(System.Logger.Level.INFO, startMsg);
 
@@ -151,6 +169,15 @@ public class VideoDecoder {
                         "Error while encoding file '" + targetFile.getAbsolutePath() + "'", e);
                 e.printStackTrace();
             } finally {
+                queue.remove(targetFile.getAbsolutePath());
+
+                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_FINISHED, targetFile);
+
+                String stopMsg = "Encoding STOPPED. Result file '" + targetFile.getAbsolutePath() + "'";
+                Application.LOGGER.log(System.Logger.Level.INFO, stopMsg);
+                Application.LOGGER.log(System.Logger.Level.INFO,
+                        "Files in queue " + queue.size() + ". Removed '" + targetFile.getAbsolutePath() + "'");
+
                 if (source.exists()) {
                     if (source.delete()) {
                         Application.LOGGER.log(System.Logger.Level.INFO,
@@ -161,29 +188,13 @@ public class VideoDecoder {
                     }
                 }
 
-
-                File[] uploadedFiles = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().listFiles();
-                if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().exists() &&
-                        uploadedFiles != null && uploadedFiles.length == 0) {
-                    if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().delete()) {
-                        Application.LOGGER.log(System.Logger.Level.INFO,
-                                "Folder deleted '" +
-                                        Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
-                    } else {
-                        Application.LOGGER.log(System.Logger.Level.ERROR,
-                                "Can't delete folder '" +
-                                        Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
-                    }
+                if (folderName.trim().length() > 0) {
+                    MediaDirectories.clearUploadsSubFolder(folderName.trim());
                 }
 
-                queue.remove(targetFile.getAbsolutePath());
-                Application.LOGGER.log(System.Logger.Level.INFO,
-                        "Files in queue " + queue.size() + ". Removed '" + targetFile.getAbsolutePath() + "'");
-
-                String stopMsg = "Encoding STOPPED. Result file '" + targetFile.getAbsolutePath() + "'";
-                Application.LOGGER.log(System.Logger.Level.INFO, stopMsg);
-
-                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_FINISHED, null);
+                if (queue.size() == 0 && Objects.requireNonNull(subDirectory.toFile().listFiles()).length == 0) {
+                    EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED);
+                }
             }
         }
     }
