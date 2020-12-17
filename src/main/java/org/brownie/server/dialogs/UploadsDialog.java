@@ -1,6 +1,7 @@
 package org.brownie.server.dialogs;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Label;
@@ -52,6 +53,11 @@ public class UploadsDialog extends Dialog implements IEventListener {
         Label title = new Label("Media files upload");
         title.getStyle().set("font-weight", "bold");
 
+        Checkbox convertVideo = new Checkbox();
+        convertVideo.setLabel("Encode uploaded video files");
+        convertVideo.setValue(true);
+        convertVideo.setWidthFull();
+
         folders = new ComboBox<>("Sub directory for uploaded files");
         folders.setWidthFull();
         folders.setItems(getFolders());
@@ -67,31 +73,34 @@ public class UploadsDialog extends Dialog implements IEventListener {
 
         updateDiscCapacity();
 
-        mainLayout.add(title, discCapacity, folders);
+        mainLayout.add(title, discCapacity, folders, convertVideo);
 
         add(mainLayout);
         EventsManager.getManager().registerListener(this);
 
-        this.setCloseOnEsc(true);
-        this.setCloseOnOutsideClick(true);
-        this.setDraggable(false);
-        this.setModal(true);
-        this.setSizeUndefined();
+        setCloseOnEsc(true);
+        setCloseOnOutsideClick(true);
+        setDraggable(false);
+        setModal(true);
+        setSizeUndefined();
 
         this.addOpenedChangeListener(event -> {
             if (event.isOpened()) {
                 multiFileBuffer = new MultiFileBuffer();
                 upload = new Upload(multiFileBuffer);
+                upload.setWidth("95%");
+                upload.setHeight("100%");
                 folders.focus();
                 upload.addAllFinishedListener(e -> new Thread(() -> {
                     final String subfolderName = getFoldersComboBoxValue(folders);
                     final Path subFolder = MediaDirectories.createSubFolder(MediaDirectories.uploadsDirectory,
                             subfolderName);
+                    final boolean encode = convertVideo.getValue();
                     multiFileBuffer.getFiles()
                             .parallelStream()
                             .forEach(file -> {
                                 if (subFolder != null) {
-                                    processFile(subfolderName, subFolder, file, multiFileBuffer);
+                                    processFile(subfolderName, subFolder, file, multiFileBuffer, encode);
                                 }
                             });
                 }).start());
@@ -158,7 +167,11 @@ public class UploadsDialog extends Dialog implements IEventListener {
         return true;
     }
 
-    private void processFile(String subfolderName, Path subFolder, String uploadedFileName, MultiFileBuffer multiFileBuffer) {
+    private void processFile(String subfolderName,
+                             Path subFolder,
+                             String uploadedFileName,
+                             MultiFileBuffer multiFileBuffer,
+                             boolean encode) {
         Application.LOGGER.log(System.Logger.Level.INFO,
                 "Processing file '" + uploadedFileName + " in " + subFolder.toFile().getAbsolutePath() + "'");
 
@@ -169,7 +182,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
             Application.LOGGER.log(System.Logger.Level.INFO,
                     "Processing new file finished '" + newFile.getAbsolutePath() + "'");
 
-            if (FileSystemDataProvider.isVideo(newFile)) {
+            if (encode && FileSystemDataProvider.isVideo(newFile)) {
                 VideoDecoder.getDecoder().addFileToQueue(subfolderName, newFile);
             } else {
                 FileSystemDataProvider.copyUploadedFile(subfolderName, newFile);
@@ -183,6 +196,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
     public static UploadsDialog showUploadsDialog() {
         UploadsDialog dialog = new UploadsDialog();
         dialog.setMinWidth("340px");
+        dialog.setMaxWidth("800px");
         dialog.setMinHeight("320px");
         dialog.setWidth("95%");
         dialog.setHeight("95%");
@@ -208,7 +222,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
     }
 
     @Override
-    public void update(EventsManager.EVENT_TYPE eventType, Object[] params) {
+    public void update(EventsManager.EVENT_TYPE eventType, Object... params) {
         var ui = this.getUI().isPresent() ? this.getUI().get() : null;
         if (ui != null) ui.getSession().access(() -> {
             updateDiscCapacity();
@@ -220,7 +234,9 @@ public class UploadsDialog extends Dialog implements IEventListener {
     public List<EventsManager.EVENT_TYPE> getEventTypes() {
         ArrayList<EventsManager.EVENT_TYPE> types = new ArrayList<>();
 
-        types.add(EventsManager.EVENT_TYPE.FILE_SYSTEM_CHANGED);
+        types.add(EventsManager.EVENT_TYPE.FILE_CREATED);
+        types.add(EventsManager.EVENT_TYPE.FILE_DELETED);
+        types.add(EventsManager.EVENT_TYPE.ENCODING_FINISHED);
 
         return types;
     }
