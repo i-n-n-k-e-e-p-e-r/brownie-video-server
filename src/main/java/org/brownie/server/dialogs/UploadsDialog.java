@@ -29,7 +29,8 @@ import java.util.stream.Collectors;
 
 public class UploadsDialog extends Dialog implements IEventListener {
 
-    public static final int BUFFER_SIZE = 128 * 1024;
+    public static final int BUFFER_SIZE = 256 * 1024;
+    private final static String TITLE_STRING = "Media files upload";
 
     private final Label discCapacity = new Label("");
     private final ComboBox<String> folders;
@@ -50,7 +51,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
         mainLayout.setSpacing(true);
         mainLayout.setAlignItems(FlexComponent.Alignment.START);
 
-        Label title = new Label("Media files upload");
+        Label title = new Label(TITLE_STRING);
         title.getStyle().set("font-weight", "bold");
 
         Checkbox convertVideo = new Checkbox();
@@ -79,8 +80,9 @@ public class UploadsDialog extends Dialog implements IEventListener {
         EventsManager.getManager().registerListener(this);
 
         setCloseOnEsc(true);
-        setCloseOnOutsideClick(true);
-        setDraggable(false);
+        setCloseOnOutsideClick(false);
+        setDraggable(true);
+        setResizable(true);
         setModal(true);
         setSizeUndefined();
 
@@ -88,6 +90,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
             if (event.isOpened()) {
                 multiFileBuffer = new MultiFileBuffer();
                 upload = new Upload(multiFileBuffer);
+                upload.getStyle().set("overflow", "auto");
                 upload.setWidth("95%");
                 upload.setHeight("100%");
                 folders.focus();
