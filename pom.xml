@@ -4,6 +4,7 @@
     <artifactId>brownie-video-server</artifactId>
     <name>Brownie Video Server</name>
     <version>1.0.1</version>
+<!--    <packaging>war</packaging>-->
     <packaging>jar</packaging>
 
     <properties>
@@ -119,6 +120,11 @@
             <artifactId>spring-boot-devtools</artifactId>
             <optional>true</optional>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-starter-tomcat</artifactId>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-testbench</artifactId>
