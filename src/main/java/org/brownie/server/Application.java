@@ -1,5 +1,6 @@
 package org.brownie.server;
 
+import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.recoder.VideoDecoder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,6 +13,7 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.util.unit.DataSize;
 
 import javax.servlet.MultipartConfigElement;
+import java.nio.file.Paths;
 
 /**
  * The entry point of the Spring Boot application.
@@ -19,12 +21,17 @@ import javax.servlet.MultipartConfigElement;
 @ServletComponentScan
 @SpringBootApplication
 public class Application extends SpringBootServletInitializer {
+    public static final String BASE_PATH =
+            System.getProperty("catalina.base") == null ?
+                    Paths.get("").toFile().getAbsolutePath() : System.getProperty("catalina.base");
     public static final long MAX_UPLOAD_FILE_SIZE = 20480000000L;
     public static final long MAX_REQUEST_SIZE = 20480000000L;
 
     public static final System.Logger LOGGER = System.getLogger("Brownie server");
 
     public static void main(String[] args) {
+        DBConnectionProvider.getInstance();
+
     	ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
         context.addApplicationListener(event -> {
             if (event instanceof ContextClosedEvent) {

@@ -178,10 +178,13 @@ public class MainViewComponents {
         Map.Entry<Component, Button> wrapper = CommonComponents.getDownloadButtonWrapper("Download", file);
 
         if (encoding) wrapper.getValue().setEnabled(false);
-        actionsLayout.add(
-                playButton,
-                wrapper.getKey()
-        );
+
+        if(playButton != null && wrapper.getKey() != null) {
+            actionsLayout.add(
+                    playButton,
+                    wrapper.getKey()
+            );
+        }
 
         return actionsLayout;
     }

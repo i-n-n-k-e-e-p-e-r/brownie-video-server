@@ -51,7 +51,7 @@ public class VideoDecoder {
         return decoder;
     }
 
-    public synchronized void addFileToQueue(String folderName, File source) {
+    public synchronized File addFileToQueue(String folderName, File source) {
         Path subDirectory = MediaDirectories.createSubFolder(MediaDirectories.mediaDirectory, folderName);
 
         if (subDirectory == null) {
@@ -67,13 +67,15 @@ public class VideoDecoder {
                 MediaDirectories.clearUploadsSubFolder(folderName.trim());
             }
 
-            return;
+            return null;
         }
         final File targetFile = FileSystemDataProvider.getUniqueFileName(
                 Paths.get(subDirectory.toFile().getAbsolutePath(),
                         changeExtension(source, OUTPUT_VIDEO_FORMAT).getName()).toFile());
 
         executor.submit(new DecodingTask(folderName, subDirectory, source, targetFile));
+
+        return targetFile;
     }
 
     public synchronized boolean isEncoding(File file) {

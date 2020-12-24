@@ -13,8 +13,8 @@ public class MediaDirectories {
     public static File uploadsDirectory;
 
     public static synchronized void initDirectories() {
-        mediaDirectory = Paths.get("media_files").toFile();
-        uploadsDirectory = Paths.get("uploads").toFile();
+        mediaDirectory = Paths.get(Application.BASE_PATH + File.separator + "media_files").toFile();
+        uploadsDirectory = Paths.get(Application.BASE_PATH + File.separator + "uploads").toFile();
 
         if (mediaDirectory.exists() && uploadsDirectory.exists()) {
             Application.LOGGER.log(System.Logger.Level.INFO,

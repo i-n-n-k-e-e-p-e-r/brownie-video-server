@@ -265,7 +265,7 @@ public class FileSystemDataProvider
 		return (!isVideo(file) && !isImage(file) && !isAudio(file) && !isText(file));
 	}
 
-	public static void copyUploadedFile(String folderName, File original) {
+	public static File copyUploadedFile(String folderName, File original) {
 		if (original == null || folderName == null) {
 			Application.LOGGER.log(System.Logger.Level.ERROR,
 					"Can't copy file. Sub directory or original file is null.");
@@ -273,14 +273,14 @@ public class FileSystemDataProvider
 				Application.LOGGER.log(System.Logger.Level.ERROR,
 						"Original file deleted '" + original.getAbsolutePath() + "'");
 			}
-			return;
+			return null;
 		}
 
 		Path subDirectory = MediaDirectories.createSubFolder(MediaDirectories.mediaDirectory, folderName.trim());
 		if (subDirectory == null) {
 			Application.LOGGER.log(System.Logger.Level.ERROR,
 					"Can't copy file. Root directory is null.");
-			return;
+			return null;
 		}
 
 		File uniqueFileName = FileSystemDataProvider.getUniqueFileName(
@@ -315,6 +315,12 @@ public class FileSystemDataProvider
 				EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED);
 			}
 		}
+
+		if (copied != null) {
+			return copied.toFile();
+		}
+
+		return null;
 	}
 
 	public static Map.Entry<Integer, Integer> getImageSize(File file) {
