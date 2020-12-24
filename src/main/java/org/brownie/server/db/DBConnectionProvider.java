@@ -18,7 +18,7 @@ import com.j256.ormlite.table.TableUtils;
 import org.brownie.server.Application;
 
 public class DBConnectionProvider {
-	
+
 	public static final String DB_NAME = "brownieDB.db";
 	
 	private static DBConnectionProvider provider = null;
@@ -28,13 +28,11 @@ public class DBConnectionProvider {
 	private final Map<Class<?>, Dao<?, ?>> ormDaos = Collections.synchronizedMap(new HashMap<>());
 
 	private DBConnectionProvider() throws SQLException {
-		String pathToDB;
-		pathToDB = new File("").getAbsolutePath();
-		this.connectionString = "jdbc:sqlite:" + pathToDB + File.separator + DB_NAME;
+		File dbFile = new File(Application.BASE_PATH + File.separator + DB_NAME);
+		this.connectionString = "jdbc:sqlite:" + dbFile.getAbsolutePath();
 		Application.LOGGER.log(System.Logger.Level.INFO,
 				"DB connection string '" + this.connectionString + "'");
 
-		File dbFile = new File(pathToDB + File.separator + DB_NAME);
 		if(!dbFile.exists()) {
 			Application.LOGGER.log(System.Logger.Level.WARNING,
 					"Can't locate sqlite DB file " + dbFile.getAbsolutePath());
@@ -60,7 +58,7 @@ public class DBConnectionProvider {
 	}
 	
     public boolean createDataBase() {
-		String pathToDB = new File("").getAbsolutePath() + File.separator + DB_NAME;
+		String pathToDB = Application.BASE_PATH + File.separator + DB_NAME;
 
     	boolean result = false;
     	

@@ -57,7 +57,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
         Checkbox convertVideo = new Checkbox();
         convertVideo.setLabel("Encode uploaded video files");
         convertVideo.setValue(true);
-        convertVideo.setWidthFull();
+        convertVideo.setWidth("-1");
 
         folders = new ComboBox<>("Sub directory for uploaded files");
         folders.setWidthFull();
@@ -94,18 +94,27 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 upload.setWidth("95%");
                 upload.setHeight("100%");
                 folders.focus();
+                upload.addStartedListener(e -> {
+                    closeButton.setEnabled(false);
+                });
                 upload.addAllFinishedListener(e -> new Thread(() -> {
                     final String subfolderName = getFoldersComboBoxValue(folders);
                     final Path subFolder = MediaDirectories.createSubFolder(MediaDirectories.uploadsDirectory,
                             subfolderName);
                     final boolean encode = convertVideo.getValue();
-                    multiFileBuffer.getFiles()
-                            .parallelStream()
-                            .forEach(file -> {
-                                if (subFolder != null) {
-                                    processFile(subfolderName, subFolder, file, multiFileBuffer, encode);
-                                }
-                            });
+                    if (subFolder != null) {
+                        final List<?> result = multiFileBuffer.getFiles()
+                                .parallelStream()
+                                .map(file ->  processFile(subfolderName, subFolder, file, multiFileBuffer, encode))
+                                .collect(Collectors.toList());
+                        Application.LOGGER.log(System.Logger.Level.INFO, "Processed " + result.size() + " files.");
+                        result.clear();
+                    }
+                    var ui = this.getUI().isPresent() ? this.getUI().get() : null;
+                    if (ui != null) ui.getSession().access(() -> {
+                        closeButton.setEnabled(true);
+                        close();
+                    });
                 }).start());
                 mainLayout.add(upload, closeButton);
             } else {
@@ -170,7 +179,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
         return true;
     }
 
-    private void processFile(String subfolderName,
+    private File processFile(String subfolderName,
                              Path subFolder,
                              String uploadedFileName,
                              MultiFileBuffer multiFileBuffer,
@@ -180,20 +189,22 @@ public class UploadsDialog extends Dialog implements IEventListener {
 
         Path pathToUploadedFile = Paths.get(subFolder.toFile().getAbsolutePath(), uploadedFileName);
         File newFile = FileSystemDataProvider.getUniqueFileName(pathToUploadedFile.toFile());
-
+        File result = null;
         if (prepareUploadedFile(uploadedFileName, newFile, multiFileBuffer)) {
             Application.LOGGER.log(System.Logger.Level.INFO,
                     "Processing new file finished '" + newFile.getAbsolutePath() + "'");
 
             if (encode && FileSystemDataProvider.isVideo(newFile)) {
-                VideoDecoder.getDecoder().addFileToQueue(subfolderName, newFile);
+                result = VideoDecoder.getDecoder().addFileToQueue(subfolderName, newFile);
             } else {
-                FileSystemDataProvider.copyUploadedFile(subfolderName, newFile);
+                result = FileSystemDataProvider.copyUploadedFile(subfolderName, newFile);
             }
         } else {
             Application.LOGGER.log(System.Logger.Level.ERROR,
                     "Failed to process new file '" + newFile.getAbsolutePath() + "'");
         }
+
+        return result;
     }
 
     public static UploadsDialog showUploadsDialog() {

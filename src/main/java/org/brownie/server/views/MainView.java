@@ -62,13 +62,10 @@ public class MainView extends AppLayout {
 
 	private User currentUser;
 	private TreeGrid<File> filesGrid;
-	
+
     public MainView(@Autowired AuthenticationService authService) {
     	// no timeout users session
 		UI.getCurrent().getSession().getSession().setMaxInactiveInterval(-1);
-
-    	// create DB and tables
-    	DBConnectionProvider.getInstance();
     	// init file dynamic resources map
     	VideoJS.getResourcesRegistrations();
 
