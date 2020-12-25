@@ -9,10 +9,11 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MultiFileBuffer;
 import org.brownie.server.Application;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.events.IEventListener;
+import org.brownie.server.providers.BrownieMultiFileBuffer;
+import org.brownie.server.providers.BrownieUploadsFileFactory;
 import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.recoder.VideoDecoder;
@@ -34,7 +35,8 @@ public class UploadsDialog extends Dialog implements IEventListener {
 
     private final Label discCapacity = new Label("");
     private final ComboBox<String> folders;
-    private MultiFileBuffer multiFileBuffer = null;
+    private BrownieMultiFileBuffer multiFileBuffer = null;
+    private BrownieUploadsFileFactory tempFilesFactory = null;
     private Upload upload = null;
     private final Button closeButton = CommonComponents.createButton("Close",
             VaadinIcon.CLOSE_CIRCLE.create(),
@@ -88,15 +90,15 @@ public class UploadsDialog extends Dialog implements IEventListener {
 
         this.addOpenedChangeListener(event -> {
             if (event.isOpened()) {
-                multiFileBuffer = new MultiFileBuffer();
+                tempFilesFactory = new BrownieUploadsFileFactory();
+                multiFileBuffer = new BrownieMultiFileBuffer(tempFilesFactory);
+
                 upload = new Upload(multiFileBuffer);
                 upload.getStyle().set("overflow", "auto");
                 upload.setWidth("95%");
                 upload.setHeight("100%");
                 folders.focus();
-                upload.addStartedListener(e -> {
-                    closeButton.setEnabled(false);
-                });
+
                 upload.addAllFinishedListener(e -> new Thread(() -> {
                     final String subfolderName = getFoldersComboBoxValue(folders);
                     final Path subFolder = MediaDirectories.createSubFolder(MediaDirectories.uploadsDirectory,
@@ -105,16 +107,13 @@ public class UploadsDialog extends Dialog implements IEventListener {
                     if (subFolder != null) {
                         final List<?> result = multiFileBuffer.getFiles()
                                 .parallelStream()
-                                .map(file ->  processFile(subfolderName, subFolder, file, multiFileBuffer, encode))
+                                .map(file -> processFile(subfolderName, subFolder, file, multiFileBuffer, encode))
                                 .collect(Collectors.toList());
                         Application.LOGGER.log(System.Logger.Level.INFO, "Processed " + result.size() + " files.");
+
+                        FileSystemDataProvider.clearTempDirectory(tempFilesFactory);
                         result.clear();
                     }
-                    var ui = this.getUI().isPresent() ? this.getUI().get() : null;
-                    if (ui != null) ui.getSession().access(() -> {
-                        closeButton.setEnabled(true);
-                        close();
-                    });
                 }).start());
                 mainLayout.add(upload, closeButton);
             } else {
@@ -140,7 +139,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 .collect(Collectors.toList());
     }
 
-    private boolean prepareUploadedFile(String uploadedFileName, File newFile, MultiFileBuffer filesBuffer) {
+    private boolean prepareUploadedFile(String uploadedFileName, File newFile, BrownieMultiFileBuffer filesBuffer) {
         try {
             if (!newFile.createNewFile()) {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
@@ -182,7 +181,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
     private File processFile(String subfolderName,
                              Path subFolder,
                              String uploadedFileName,
-                             MultiFileBuffer multiFileBuffer,
+                             BrownieMultiFileBuffer multiFileBuffer,
                              boolean encode) {
         Application.LOGGER.log(System.Logger.Level.INFO,
                 "Processing file '" + uploadedFileName + " in " + subFolder.toFile().getAbsolutePath() + "'");

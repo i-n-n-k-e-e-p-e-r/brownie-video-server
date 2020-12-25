@@ -24,6 +24,8 @@ public class Application extends SpringBootServletInitializer {
     public static final String BASE_PATH =
             System.getProperty("catalina.base") == null ?
                     Paths.get("").toFile().getAbsolutePath() : System.getProperty("catalina.base");
+    public static final String TMP_DIR = System.getProperty("java.io.tmpdir");
+
     public static final long MAX_UPLOAD_FILE_SIZE = 20480000000L;
     public static final long MAX_REQUEST_SIZE = 20480000000L;
 

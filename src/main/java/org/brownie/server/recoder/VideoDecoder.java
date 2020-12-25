@@ -73,7 +73,7 @@ public class VideoDecoder {
                 Paths.get(subDirectory.toFile().getAbsolutePath(),
                         changeExtension(source, OUTPUT_VIDEO_FORMAT).getName()).toFile());
 
-        executor.submit(new DecodingTask(folderName, subDirectory, source, targetFile));
+        executor.submit(new DecodingTask(folderName, source, targetFile));
 
         return targetFile;
     }
@@ -145,13 +145,11 @@ public class VideoDecoder {
         private final String folderName;
         private final File source;
         private final File targetFile;
-        private final Path subDirectory;
 
-        public DecodingTask(String folderName, Path subDirectory, File source, File targetFile) {
+        public DecodingTask(String folderName, File source, File targetFile) {
             this.folderName = folderName;
             this.source = source;
             this.targetFile = targetFile;
-            this.subDirectory = subDirectory;
         }
 
         @Override
@@ -192,10 +190,6 @@ public class VideoDecoder {
 
                 if (folderName.trim().length() > 0) {
                     MediaDirectories.clearUploadsSubFolder(folderName.trim());
-                }
-
-                if (queue.size() == 0 && Objects.requireNonNull(subDirectory.toFile().listFiles()).length == 0) {
-                    EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED);
                 }
             }
         }
