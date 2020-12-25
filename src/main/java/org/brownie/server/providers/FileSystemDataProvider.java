@@ -33,6 +33,7 @@ public class FileSystemDataProvider
 
 	private static final long serialVersionUID = -421399331824343179L;
 
+	public static final String TEMP_UPLOADED_FILE_PREFIX = "brownie_upload_tmpfile_";
 	private final File root;
 	private final TreeGrid<File> grid;
 
@@ -311,16 +312,10 @@ public class FileSystemDataProvider
 				MediaDirectories.clearUploadsSubFolder(folderName.trim());
 			}
 
-			if (Objects.requireNonNull(subDirectory.toFile().listFiles()).length == 0) {
-				EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED);
-			}
+			EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED);
 		}
 
-		if (copied != null) {
-			return copied.toFile();
-		}
-
-		return null;
+		return copied.toFile();
 	}
 
 	public static Map.Entry<Integer, Integer> getImageSize(File file) {
@@ -378,5 +373,18 @@ public class FileSystemDataProvider
 						"Can't delete '" + fileForDelete.getAbsolutePath() + "'");
 			}
 		}
+	}
+
+	public static synchronized void clearTempDirectory(BrownieUploadsFileFactory factory) {
+		factory.getTempFiles().forEach(file -> {
+			Application.LOGGER.log(System.Logger.Level.ERROR, "TO DELETE " + file.getName());
+			File toDelete = new File(Application.TMP_DIR + File.separator + file.getName());
+			if (toDelete.exists()) {
+				if (!toDelete.delete()) {
+					Application.LOGGER.log(System.Logger.Level.ERROR,
+							"Can't delete '" + toDelete.getAbsolutePath() + "'");
+				}
+			}
+		});
 	}
 }
