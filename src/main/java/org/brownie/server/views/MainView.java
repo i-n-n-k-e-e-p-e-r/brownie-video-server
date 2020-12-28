@@ -40,7 +40,8 @@ import java.io.File;
 @PWA(name = "Brownie Video Server",
         shortName = "Brownie",
 		iconPath = "icons/brownie.png",
-        description = "Simple home video and files server")
+        description = "Simple home video and files server",
+		offlineResources = { "offline.html", "sw.js" })
 @CssImport("./styles/shared-styles.css")
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 public class MainView extends AppLayout {
