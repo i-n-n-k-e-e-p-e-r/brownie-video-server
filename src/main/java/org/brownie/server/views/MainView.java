@@ -41,7 +41,7 @@ import java.io.File;
         shortName = "Brownie",
 		iconPath = "icons/brownie.png",
         description = "Simple home video and files server",
-		offlineResources = { "offline.html", "sw.js" })
+		offlineResources = {})
 @CssImport("./styles/shared-styles.css")
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 public class MainView extends AppLayout {
