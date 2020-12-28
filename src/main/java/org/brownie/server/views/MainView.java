@@ -16,7 +16,6 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.shared.communication.PushMode;
-import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
 import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.services.AuthenticationService;
@@ -41,8 +40,7 @@ import java.io.File;
 @PWA(name = "Brownie Video Server",
         shortName = "Brownie",
 		iconPath = "icons/brownie.png",
-        description = "Simple home video and files server",
-        enableInstallPrompt = false)
+        description = "Simple home video and files server")
 @CssImport("./styles/shared-styles.css")
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 public class MainView extends AppLayout {

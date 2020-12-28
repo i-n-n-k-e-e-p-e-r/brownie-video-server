@@ -239,7 +239,9 @@ public class UploadsDialog extends Dialog implements IEventListener {
         var ui = this.getUI().isPresent() ? this.getUI().get() : null;
         if (ui != null) ui.getSession().access(() -> {
             updateDiscCapacity();
+            var oldValue = folders.getValue();
             folders.setItems(getFolders());
+            folders.setValue(oldValue);
         });
     }
 

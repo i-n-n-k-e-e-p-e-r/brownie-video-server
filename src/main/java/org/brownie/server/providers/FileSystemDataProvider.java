@@ -377,7 +377,6 @@ public class FileSystemDataProvider
 
 	public static synchronized void clearTempDirectory(BrownieUploadsFileFactory factory) {
 		factory.getTempFiles().forEach(file -> {
-			Application.LOGGER.log(System.Logger.Level.ERROR, "TO DELETE " + file.getName());
 			File toDelete = new File(Application.TMP_DIR + File.separator + file.getName());
 			if (toDelete.exists()) {
 				if (!toDelete.delete()) {
