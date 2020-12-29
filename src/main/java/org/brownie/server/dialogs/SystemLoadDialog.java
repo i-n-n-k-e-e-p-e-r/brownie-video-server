@@ -45,10 +45,10 @@ public class SystemLoadDialog extends Dialog {
         closeButton.addClickListener(e -> this.close());
         closeButton.setWidthFull();
 
-        version.setText("Server version: " + this.getClass().getPackage().getImplementationVersion());
+        version.setText("Version: " + this.getClass().getPackage().getImplementationVersion());
         name.getStyle().set("font-weight", "bold");
         Html author = new Html("<div>by <a href=\"https://github.com/i-n-n-k-e-e-p-e-r\" title=\"by Vladimir Senchikhin\">Vladimir Senchikhin</a></div>");
-        Html icon = new Html("<div>Application icon by <a href=\"https://www.flaticon.com/authors/photo3idea-studio\" title=\"photo3idea_studio\">photo3idea_studio</a> from <a href=\"https://www.flaticon.com/\" title=\"Flaticon\">www.flaticon.com</a></div>");
+        Html icon = new Html("<div>Brownie icon by <a href=\"https://www.flaticon.com/authors/photo3idea-studio\" title=\"photo3idea_studio\">photo3idea_studio</a> from <a href=\"https://www.flaticon.com/\" title=\"Flaticon\">www.flaticon.com</a></div>");
         Html vaadin = new Html("<div>Powered by <a href=\"https://vaadin.com\" title=\"Powered by Vaadin\">Vaadin</a></div>");
         mainLayout.add(title,
                 cpuLoad,
@@ -56,6 +56,7 @@ public class SystemLoadDialog extends Dialog {
                 discUsage,
                 name,
                 author,
+                version,
                 icon,
                 vaadin,
                 license,
@@ -78,7 +79,7 @@ public class SystemLoadDialog extends Dialog {
     public static SystemLoadDialog showSystemLoadDialog() {
         SystemLoadDialog dialog = new SystemLoadDialog();
         dialog.setMinWidth("340px");
-        dialog.setMinHeight("320px");
+        dialog.setMinHeight("340px");
         dialog.setWidth("340px");
         dialog.setHeight("-1");
 
