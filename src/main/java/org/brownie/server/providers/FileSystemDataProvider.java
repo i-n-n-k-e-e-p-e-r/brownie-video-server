@@ -33,6 +33,7 @@ public class FileSystemDataProvider
 
 	private static final long serialVersionUID = -421399331824343179L;
 
+	public static final Set<String> VIDEO_EXTENSIONS = getVideoFormats();
 	public static final String TEMP_UPLOADED_FILE_PREFIX = "brownie_upload_tmpfile_";
 	private final File root;
 	private final TreeGrid<File> grid;
@@ -48,12 +49,43 @@ public class FileSystemDataProvider
 			}
 		}
 	};
-	
+
 	public FileSystemDataProvider(TreeGrid<File> grid, File root) {
 		this.grid = grid;
 		this.root = root;
 	}
-	
+
+	private static Set<String> getVideoFormats() {
+		Set<String> formats = new HashSet<>();
+
+		formats.add("webm");
+		formats.add("mkv");
+		formats.add("avi");
+		formats.add("flv");
+		formats.add("vob");
+		formats.add("ogv");
+		formats.add("ogg");
+		formats.add("mov");
+		formats.add("qt");
+		formats.add("wmv");
+		formats.add("yuv");
+		formats.add("rm");
+		formats.add("rmvb");
+		formats.add("amv");
+		formats.add("mp4");
+		formats.add("m4p");
+		formats.add("m4v");
+		formats.add("mpg");
+		formats.add("mp2");
+		formats.add("mpeg");
+		formats.add("mpe");
+		formats.add("mpv");
+		formats.add("m2v");
+		formats.add("3gp");
+
+		return formats;
+	}
+
 	@Override
 	public int getChildCount(HierarchicalQuery<File, FilenameFilter> query) {
 		return (int) fetchChildren(query).count();
@@ -205,6 +237,14 @@ public class FileSystemDataProvider
 		return getUniqueFileName(newPath.toFile());
 	}
 
+	public static String getExtension(File file) {
+		int i = file.getName().lastIndexOf('.');
+		if (i != -1) {
+			return file.getName().substring(i + 1);
+		}
+		return "";
+	}
+
 	@Override
 	public Stream<QuerySortOrder> apply(SortDirection sortDirection) {
 		String fieldId = grid.getColumns().get(0).getId().isPresent() ? grid.getColumns().get(0).getId().get() : "";
@@ -247,7 +287,8 @@ public class FileSystemDataProvider
 	}
 
 	public static boolean isVideo(File file) {
-		return getMIMETypeFromFiles(file).contains("video");
+		return getMIMETypeFromFiles(file).contains("video")
+				|| (VIDEO_EXTENSIONS.contains(getExtension(file)));
 	}
 
 	public static boolean isImage(File file) {
