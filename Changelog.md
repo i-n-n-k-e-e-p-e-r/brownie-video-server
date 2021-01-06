@@ -1,7 +1,7 @@
 ### Version 1.0.2:
 ##### Fix
+- Fixed video controls out of view in some cases
 - Fixed encoding video files with wrong MIME types
-##### Fiches
 
 ### Version 1.0.1:  
 ##### Fix

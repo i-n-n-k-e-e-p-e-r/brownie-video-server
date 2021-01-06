@@ -105,8 +105,8 @@ public class PlayerDialog extends Dialog {
 		Application.LOGGER.log(System.Logger.Level.DEBUG,
 				"New player " + this.hashCode() + " for user " + mainView.getCurrentUser().getName() + ".");
 
-		videoPlayer.setHeight("95%");
-		videoPlayer.setWidth("-1");
+		videoPlayer.setHeight("-1");
+		videoPlayer.setWidth("95%");
 
 		contentLayout.setPadding(true);
 		contentLayout.setAlignItems(Alignment.CENTER);
