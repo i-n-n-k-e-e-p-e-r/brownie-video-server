@@ -37,28 +37,32 @@ public class EventsManager {
 
     public synchronized void registerListener(@NotNull IEventListener listener) {
         if (listener.getEventTypes() == null || listener.getEventTypes().size() == 0) return;
-
-        listener.getEventTypes().forEach(eventType ->
-                listeners.computeIfAbsent(eventType,
-                        k -> Collections.synchronizedList(new ArrayList<>())).add(listener));
-
+        synchronized (listeners) {
+            listener.getEventTypes().forEach(eventType ->
+                    listeners.computeIfAbsent(eventType,
+                            k -> Collections.synchronizedList(new ArrayList<>())).add(listener));
+        }
         Application.LOGGER.log(System.Logger.Level.DEBUG, "Listener registered " + listener);
     }
 
-    public synchronized void unregisterListener(@NotNull IEventListener listener) {
+    public void unregisterListener(@NotNull IEventListener listener) {
         if (listener.getEventTypes() == null || listener.getEventTypes().size() == 0) return;
-
-        listener.getEventTypes().forEach(eventType ->
-                listeners.computeIfAbsent(eventType,
-                        k -> Collections.synchronizedList(new ArrayList<>())).remove(listener));
-
+        synchronized (listeners) {
+            listener.getEventTypes().forEach(eventType ->
+                    listeners.computeIfAbsent(eventType,
+                            k -> Collections.synchronizedList(new ArrayList<>())).remove(listener));
+        }
         Application.LOGGER.log(System.Logger.Level.DEBUG, "Listener unregistered " + listener);
     }
 
-    public synchronized void notifyAllListeners(EVENT_TYPE eventType, Object... params) {
+    public void notifyAllListeners(EVENT_TYPE eventType, Object... params) {
         Application.LOGGER.log(System.Logger.Level.DEBUG, "Notify all listeners");
-        new Thread(() -> listeners.computeIfAbsent(eventType,
-                k -> Collections.synchronizedList(new ArrayList<>()))
-                .parallelStream().forEach(listener -> listener.update(eventType, params))).start();
+        new Thread(() -> {
+            synchronized (listeners) {
+                listeners.computeIfAbsent(eventType,
+                    k -> Collections.synchronizedList(new ArrayList<>()))
+                    .parallelStream().forEach(listener -> listener.update(eventType, params));
+            }
+        }).start();
     }
 }

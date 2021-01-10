@@ -307,7 +307,7 @@ public class FileSystemDataProvider
 		return (!isVideo(file) && !isImage(file) && !isAudio(file) && !isText(file));
 	}
 
-	public static File copyUploadedFile(String folderName, File original) {
+	public static void copyUploadedFile(String folderName, File original) {
 		if (original == null || folderName == null) {
 			Application.LOGGER.log(System.Logger.Level.ERROR,
 					"Can't copy file. Sub directory or original file is null.");
@@ -315,14 +315,14 @@ public class FileSystemDataProvider
 				Application.LOGGER.log(System.Logger.Level.ERROR,
 						"Original file deleted '" + original.getAbsolutePath() + "'");
 			}
-			return null;
+			return;
 		}
 
 		Path subDirectory = MediaDirectories.createSubFolder(MediaDirectories.mediaDirectory, folderName.trim());
 		if (subDirectory == null) {
 			Application.LOGGER.log(System.Logger.Level.ERROR,
 					"Can't copy file. Root directory is null.");
-			return null;
+			return;
 		}
 
 		File uniqueFileName = FileSystemDataProvider.getUniqueFileName(
@@ -355,8 +355,6 @@ public class FileSystemDataProvider
 
 			EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED);
 		}
-
-		return copied.toFile();
 	}
 
 	public static Map.Entry<Integer, Integer> getImageSize(File file) {
@@ -416,7 +414,7 @@ public class FileSystemDataProvider
 		}
 	}
 
-	public static synchronized void clearTempDirectory(BrownieUploadsFileFactory factory) {
+	public static void clearTempDirectory(BrownieUploadsFileFactory factory) {
 		factory.getTempFiles().forEach(file -> {
 			File toDelete = new File(Application.TMP_DIR + File.separator + file.getName());
 			if (toDelete.exists()) {

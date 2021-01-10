@@ -22,10 +22,7 @@ import org.brownie.server.views.CommonComponents;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class UploadsDialog extends Dialog implements IEventListener {
@@ -98,28 +95,26 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 upload.setWidth("95%");
                 upload.setHeight("100%");
                 folders.focus();
-
-                upload.addAllFinishedListener(e -> new Thread(() -> {
+                upload.addFinishedListener(e -> {
                     final String subfolderName = getFoldersComboBoxValue(folders);
-                    final Path subFolder = MediaDirectories.createSubFolder(MediaDirectories.uploadsDirectory,
-                            subfolderName);
-                    final boolean encode = convertVideo.getValue();
-                    if (subFolder != null) {
-                        final List<?> result = multiFileBuffer.getFiles()
-                                .parallelStream()
-                                .map(file -> processFile(subfolderName, subFolder, file, multiFileBuffer, encode))
-                                .collect(Collectors.toList());
-                        Application.LOGGER.log(System.Logger.Level.INFO, "Processed " + result.size() + " files.");
-
-                        FileSystemDataProvider.clearTempDirectory(tempFilesFactory);
-                        result.clear();
-                    }
-                }).start());
+                    final Path subFolder = MediaDirectories.createSubFolder(MediaDirectories.uploadsDirectory, subfolderName);
+                    if (subFolder != null)
+                        processFile(subfolderName, subFolder, e.getFileName(), multiFileBuffer, convertVideo.getValue());
+                });
                 mainLayout.add(upload, closeButton);
             } else {
                 mainLayout.remove(upload);
+                upload = null;
                 mainLayout.remove(closeButton);
             }
+
+            if (tempFilesFactory != null)
+                FileSystemDataProvider.clearTempDirectory(tempFilesFactory);
+        });
+
+        this.addDetachListener(event -> {
+            if (tempFilesFactory != null)
+                FileSystemDataProvider.clearTempDirectory(tempFilesFactory);
         });
     }
 
@@ -172,38 +167,48 @@ public class UploadsDialog extends Dialog implements IEventListener {
             } catch (IOException e) {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Error while closing streams '" + newFile.getAbsolutePath() + "'", e);
+            } finally {
+                try {
+                    multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
 
         return true;
     }
 
-    private File processFile(String subfolderName,
+    private void processFile(String subfolderName,
                              Path subFolder,
                              String uploadedFileName,
                              BrownieMultiFileBuffer multiFileBuffer,
                              boolean encode) {
+
         Application.LOGGER.log(System.Logger.Level.INFO,
                 "Processing file '" + uploadedFileName + " in " + subFolder.toFile().getAbsolutePath() + "'");
 
         Path pathToUploadedFile = Paths.get(subFolder.toFile().getAbsolutePath(), uploadedFileName);
         File newFile = FileSystemDataProvider.getUniqueFileName(pathToUploadedFile.toFile());
-        File result = null;
         if (prepareUploadedFile(uploadedFileName, newFile, multiFileBuffer)) {
             Application.LOGGER.log(System.Logger.Level.INFO,
                     "Processing new file finished '" + newFile.getAbsolutePath() + "'");
 
             if (encode && FileSystemDataProvider.isVideo(newFile)) {
-                result = VideoDecoder.getDecoder().addFileToQueue(subfolderName, newFile);
+                VideoDecoder.getDecoder().addFileToQueue(subfolderName, newFile);
             } else {
-                result = FileSystemDataProvider.copyUploadedFile(subfolderName, newFile);
+                FileSystemDataProvider.copyUploadedFile(subfolderName, newFile);
             }
         } else {
             Application.LOGGER.log(System.Logger.Level.ERROR,
                     "Failed to process new file '" + newFile.getAbsolutePath() + "'");
         }
-
-        return result;
     }
 
     public static UploadsDialog showUploadsDialog() {
