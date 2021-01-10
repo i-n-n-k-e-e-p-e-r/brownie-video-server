@@ -179,7 +179,7 @@ public class MainViewComponents {
 
         if (encoding) wrapper.getValue().setEnabled(false);
 
-        if(playButton != null && wrapper.getKey() != null) {
+        if(wrapper.getKey() != null) {
             actionsLayout.add(
                     playButton,
                     wrapper.getKey()

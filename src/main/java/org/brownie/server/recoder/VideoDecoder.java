@@ -12,7 +12,6 @@ import ws.schild.jave.encode.AudioAttributes;
 import ws.schild.jave.encode.EncodingAttributes;
 import ws.schild.jave.encode.VideoAttributes;
 import ws.schild.jave.encode.enums.X264_PROFILE;
-import ws.schild.jave.info.VideoSize;
 
 import javax.validation.constraints.NotNull;
 import java.io.File;
@@ -21,7 +20,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,7 +49,7 @@ public class VideoDecoder {
         return decoder;
     }
 
-    public synchronized File addFileToQueue(String folderName, File source) {
+    public synchronized void addFileToQueue(String folderName, File source) {
         Path subDirectory = MediaDirectories.createSubFolder(MediaDirectories.mediaDirectory, folderName);
 
         if (subDirectory == null) {
@@ -67,15 +65,13 @@ public class VideoDecoder {
                 MediaDirectories.clearUploadsSubFolder(folderName.trim());
             }
 
-            return null;
+            return;
         }
         final File targetFile = FileSystemDataProvider.getUniqueFileName(
                 Paths.get(subDirectory.toFile().getAbsolutePath(),
                         changeExtension(source, OUTPUT_VIDEO_FORMAT).getName()).toFile());
 
         executor.submit(new DecodingTask(folderName, source, targetFile));
-
-        return targetFile;
     }
 
     public synchronized boolean isEncoding(File file) {
@@ -100,14 +96,13 @@ public class VideoDecoder {
         AudioAttributes audio = new AudioAttributes();
         audio.setCodec("aac");
 
-        audio.setBitRate(128000);
+        audio.setBitRate(256000);
         audio.setChannels(2);
         audio.setSamplingRate(44100);
 
         VideoAttributes video = new VideoAttributes();
         video.setCodec("h264");
         video.setX264Profile(X264_PROFILE.BASELINE);
-        video.setFrameRate(30);
 
         MultimediaObject sourceMediaObject = new MultimediaObject(source);
 

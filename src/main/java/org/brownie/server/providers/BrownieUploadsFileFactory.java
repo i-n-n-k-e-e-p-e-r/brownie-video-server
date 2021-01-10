@@ -5,9 +5,11 @@ import com.vaadin.flow.component.upload.receivers.FileFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class BrownieUploadsFileFactory implements FileFactory {
-    private ArrayList<File> tempFiles = new ArrayList<>();
+    private final List<File> tempFiles = Collections.synchronizedList(new ArrayList<>());
 
     @Override
     public File createFile(String s) throws IOException {
@@ -17,7 +19,7 @@ public class BrownieUploadsFileFactory implements FileFactory {
         return tempFile;
     }
 
-    public ArrayList<File> getTempFiles() {
+    public List<File> getTempFiles() {
         return this.tempFiles;
     }
 }

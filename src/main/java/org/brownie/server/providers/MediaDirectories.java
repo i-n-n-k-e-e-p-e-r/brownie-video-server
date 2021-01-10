@@ -6,9 +6,6 @@ import org.brownie.server.Application;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class MediaDirectories {
 

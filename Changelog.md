@@ -1,3 +1,11 @@
+### Version 1.0.3:
+##### Fix
+- Audio encodes in 256kbs
+- 30fps removed from decoder config hardcode (now same as source)
+- Enhanced disc space management
+- Uploads process stability fixes (process for every single file, 
+  not for all in parallel)
+
 ### Version 1.0.2:
 ##### Fix
 - Fixed video controls out of view in some cases
