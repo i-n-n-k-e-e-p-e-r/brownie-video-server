@@ -134,18 +134,47 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 .collect(Collectors.toList());
     }
 
-    private boolean prepareUploadedFile(String uploadedFileName, File newFile, BrownieMultiFileBuffer filesBuffer) {
+    private boolean createNewFile(File newFile) {
+        boolean result;
+
         try {
-            if (!newFile.createNewFile()) {
+            result = newFile.createNewFile();
+            if (!result) {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Can't create new file '" + newFile.getAbsolutePath() + "'");
-                return false;
             }
         } catch (IOException ex) {
             Application.LOGGER.log(System.Logger.Level.ERROR,
                     "Can't create new file '" + newFile.getAbsolutePath() + "'", ex);
-            return false;
+
+            result = false;
         }
+
+        if (!result && newFile.exists() && newFile.delete()) {
+            Application.LOGGER.log(System.Logger.Level.ERROR,
+                    "File deleted after creation error '" + newFile.getAbsolutePath() + "'");
+        }
+
+        return result;
+    }
+
+    private boolean prepareUploadedFile(String uploadedFileName, File newFile, BrownieMultiFileBuffer filesBuffer) {
+        try {
+            multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().flush();
+        } catch (IOException e) {
+            Application.LOGGER.log(System.Logger.Level.ERROR,
+                    " '" + newFile.getAbsolutePath() + "'", e);
+        } finally {
+            try {
+                multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        boolean fileReady = createNewFile(newFile);
+
+        if (!fileReady) return false;
 
         InputStream in = null;
         OutputStream out = null;
@@ -157,9 +186,12 @@ public class UploadsDialog extends Dialog implements IEventListener {
             while(in.read(data) > 0) {
                 out.write(data);
             }
+
+            fileReady = true;
         } catch (IOException ex) {
             Application.LOGGER.log(System.Logger.Level.ERROR,
                     "Error while writing uploaded file '" + newFile.getAbsolutePath() + "'", ex);
+            fileReady = false;
         } finally {
             try {
                 if (in != null) in.close();
@@ -168,21 +200,20 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Error while closing streams '" + newFile.getAbsolutePath() + "'", e);
             } finally {
-                try {
-                    multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().flush();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                File tempFile = multiFileBuffer.getTempFile(uploadedFileName);
+                if (tempFile != null && tempFile.exists() && tempFile.delete()) {
+                    Application.LOGGER.log(System.Logger.Level.DEBUG,
+                            "Temp file deleted'" + newFile.getAbsolutePath() + "'");
+                }
+
+                if (!fileReady && newFile.exists() && newFile.delete()) {
+                    Application.LOGGER.log(System.Logger.Level.ERROR,
+                            "File deleted after creation error '" + newFile.getAbsolutePath() + "'");
                 }
             }
         }
 
-        return true;
+        return fileReady;
     }
 
     private void processFile(String subfolderName,
@@ -222,7 +253,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
         dialog.setResizable(true);
         dialog.setDraggable(false);
         dialog.setCloseOnEsc(true);
-        dialog.setCloseOnOutsideClick(true);
+        dialog.setCloseOnOutsideClick(false);
         dialog.setModal(true);
         dialog.open();
 

@@ -5,6 +5,7 @@ import com.vaadin.flow.component.upload.receivers.AbstractFileBuffer;
 import com.vaadin.flow.component.upload.receivers.FileData;
 
 import java.io.*;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -12,7 +13,8 @@ import java.util.logging.Level;
 
 public class BrownieMultiFileBuffer extends AbstractFileBuffer implements MultiFileReceiver {
     private final BrownieUploadsFileFactory factory;
-    private final Map<String, BrownieFileData> files = new HashMap<>();
+    private final Map<String, BrownieFileData> files = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, File> fileNamesToTempFiles = Collections.synchronizedMap(new HashMap<>());
 
     public BrownieMultiFileBuffer(BrownieUploadsFileFactory factory) {
         super(factory);
@@ -27,7 +29,9 @@ public class BrownieMultiFileBuffer extends AbstractFileBuffer implements MultiF
 
     protected FileOutputStream createFileOutputStream(String fileName) {
         try {
-            return new BrownieUploadOutputStream(this.factory.createFile(fileName));
+            File tempFile = this.factory.createFile(fileName);
+            this.fileNamesToTempFiles.putIfAbsent(fileName, tempFile);
+            return new BrownieUploadOutputStream(tempFile);
         } catch (IOException var3) {
             this.getLogger().log(Level.SEVERE, "Failed to create file output stream for: '" + fileName + "'", var3);
             return null;
@@ -64,5 +68,9 @@ public class BrownieMultiFileBuffer extends AbstractFileBuffer implements MultiF
         }
 
         return new ByteArrayInputStream(new byte[0]);
+    }
+
+    public File getTempFile(String fileName) {
+        return this.fileNamesToTempFiles.get(fileName);
     }
 }

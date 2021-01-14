@@ -162,7 +162,7 @@ public class UsersDialog extends Dialog {
         confirmDialog.addRejectListener(rEvent -> confirmDialog.close());
         confirmDialog.addConfirmListener(confirmed -> {
             User user = usersGrid.getSelectedItems().iterator().next();
-            user.deleteUserFromDB();
+            user.deleteUserFromDB(DBConnectionProvider.getInstance());
             Application.LOGGER.log(System.Logger.Level.INFO,
                     "Deleted user '" + user.getName() + "'");
             updateUsers();

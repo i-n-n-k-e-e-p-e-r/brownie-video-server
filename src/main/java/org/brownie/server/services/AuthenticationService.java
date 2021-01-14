@@ -24,7 +24,7 @@ public class AuthenticationService implements Serializable {
 		User authenticatedUser = null;
 		
 		try {
-			if (User.getAdminsCount() == 0) {
+			if (User.getAdminsCount(DBConnectionProvider.getInstance()) == 0) {
 				Application.LOGGER.log(System.Logger.Level.WARNING,
 						"Need to create very first admin user!");
 

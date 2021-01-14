@@ -89,24 +89,24 @@ public class User {
     }
     
     @SuppressWarnings("unchecked")
-	public void updateUserDBData() throws SQLException {
-    	((Dao<User, Integer>)DBConnectionProvider.getInstance().getOrmDaos()
+	public void updateUserDBData(DBConnectionProvider provider) throws SQLException {
+    	((Dao<User, Integer>)provider.getOrmDaos()
     			.get(User.class)).createOrUpdate(this);
     }
     
     @SuppressWarnings("unchecked")
-	public void deleteUserFromDB() {
+	public void deleteUserFromDB(DBConnectionProvider provider) {
     	try {
-			((Dao<User, Integer>)DBConnectionProvider.getInstance().getOrmDaos()
+			((Dao<User, Integer>)provider.getOrmDaos()
 					.get(User.class)).delete(this);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
     }
     
-    public static boolean isUserNameFreeToUse(String userName) {
+    public static boolean isUserNameFreeToUse(DBConnectionProvider provider, String userName) {
     	try {
-			return DBConnectionProvider.getInstance().getOrmDaos().get(User.class).queryForEq("name", userName).size() == 0;
+			return provider.getOrmDaos().get(User.class).queryForEq("name", userName).size() == 0;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -114,10 +114,10 @@ public class User {
     	return false;
     }
 
-    public static long getAdminsCount() {
+    public static long getAdminsCount(DBConnectionProvider provider) {
         long count = 0;
         try {
-            count = DBConnectionProvider.getInstance().getOrmDaos().get(User.class)
+            count = provider.getOrmDaos().get(User.class)
                     .queryBuilder().where().eq("group", User.GROUP.ADMIN.ordinal()).countOf();
         } catch (SQLException e) {
             Application.LOGGER.log(System.Logger.Level.ERROR,
