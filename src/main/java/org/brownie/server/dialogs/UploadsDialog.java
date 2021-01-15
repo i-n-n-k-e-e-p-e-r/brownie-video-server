@@ -22,8 +22,8 @@ import org.brownie.server.views.CommonComponents;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UploadsDialog extends Dialog implements IEventListener {
 
@@ -60,11 +60,11 @@ public class UploadsDialog extends Dialog implements IEventListener {
 
         folders = new ComboBox<>("Sub directory for uploaded files");
         folders.setWidthFull();
-        folders.setItems(getFolders());
+        folders.setItems(MediaDirectories.getFoldersInMedia());
         folders.setAllowCustomValue(true);
         folders.setPlaceholder("Type the name or choose");
         folders.addCustomValueSetListener(event -> {
-            List<String> newValues = getFolders();
+            List<String> newValues = MediaDirectories.getFoldersInMedia();
             newValues.add(event.getDetail());
             folders.setItems(newValues);
             folders.setValue(event.getDetail());
@@ -95,12 +95,22 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 upload.setWidth("95%");
                 upload.setHeight("100%");
                 folders.focus();
-                upload.addFinishedListener(e -> {
+
+                upload.addFailedListener(e -> Application.LOGGER.log(System.Logger.Level.ERROR,
+                        "Error while uploading file. Reason is '" + e.getReason() + "'."));
+                upload.addFinishedListener(e -> new Thread(() -> {
                     final String subfolderName = getFoldersComboBoxValue(folders);
-                    final Path subFolder = MediaDirectories.createSubFolder(MediaDirectories.uploadsDirectory, subfolderName);
+                    final Path subFolder = MediaDirectories.createSubFolder(MediaDirectories.uploadsDirectory,
+                            subfolderName);
+
                     if (subFolder != null)
-                        processFile(subfolderName, subFolder, e.getFileName(), multiFileBuffer, convertVideo.getValue());
-                });
+                        processFile(subfolderName,
+                                subFolder,
+                                e.getFileName(),
+                                multiFileBuffer,
+                                convertVideo.getValue());
+                }).start());
+
                 mainLayout.add(upload, closeButton);
             } else {
                 mainLayout.remove(upload);
@@ -126,55 +136,41 @@ public class UploadsDialog extends Dialog implements IEventListener {
         }
     }
 
-    private List<String> getFolders() {
-        return Arrays.stream(Objects.requireNonNull(MediaDirectories.mediaDirectory.listFiles()))
-                .filter(File::isDirectory)
-                .map(File::getName)
-                .sorted()
-                .collect(Collectors.toList());
-    }
-
-    private boolean createNewFile(File newFile) {
-        boolean result;
-
-        try {
-            result = newFile.createNewFile();
-            if (!result) {
-                Application.LOGGER.log(System.Logger.Level.ERROR,
-                        "Can't create new file '" + newFile.getAbsolutePath() + "'");
-            }
-        } catch (IOException ex) {
-            Application.LOGGER.log(System.Logger.Level.ERROR,
-                    "Can't create new file '" + newFile.getAbsolutePath() + "'", ex);
-
-            result = false;
-        }
-
-        if (!result && newFile.exists() && newFile.delete()) {
-            Application.LOGGER.log(System.Logger.Level.ERROR,
-                    "File deleted after creation error '" + newFile.getAbsolutePath() + "'");
-        }
-
-        return result;
-    }
-
-    private boolean prepareUploadedFile(String uploadedFileName, File newFile, BrownieMultiFileBuffer filesBuffer) {
+    protected void flushTempFileOutputBuffer(String uploadedFileName) {
         try {
             multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().flush();
         } catch (IOException e) {
             Application.LOGGER.log(System.Logger.Level.ERROR,
-                    " '" + newFile.getAbsolutePath() + "'", e);
-        } finally {
-            try {
-                multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                    " '" + uploadedFileName + "'", e);
         }
+    }
 
-        boolean fileReady = createNewFile(newFile);
+    protected void closeTempFileOutputBuffer(String uploadedFileName) {
+        try {
+            multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().close();
+        } catch (IOException e) {
+            Application.LOGGER.log(System.Logger.Level.ERROR,
+                    " '" + uploadedFileName + "'", e);
+        }
+    }
 
-        if (!fileReady) return false;
+    protected void deleteTempFile(String uploadedFileName) {
+        File tempFile = multiFileBuffer.getTempFile(uploadedFileName);
+        if (tempFile != null && tempFile.exists() && tempFile.delete()) {
+            Application.LOGGER.log(System.Logger.Level.DEBUG,
+                    "Temp file deleted'" + tempFile.getAbsolutePath() + "'");
+        }
+    }
+
+    protected boolean prepareUploadedFile(String uploadedFileName, File newFile, BrownieMultiFileBuffer filesBuffer) {
+        flushTempFileOutputBuffer(uploadedFileName);
+
+        boolean fileReady = FileSystemDataProvider.createNewFile(newFile);
+
+        if (!fileReady) {
+            closeTempFileOutputBuffer(uploadedFileName);
+            return false;
+        }
 
         InputStream in = null;
         OutputStream out = null;
@@ -200,11 +196,8 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Error while closing streams '" + newFile.getAbsolutePath() + "'", e);
             } finally {
-                File tempFile = multiFileBuffer.getTempFile(uploadedFileName);
-                if (tempFile != null && tempFile.exists() && tempFile.delete()) {
-                    Application.LOGGER.log(System.Logger.Level.DEBUG,
-                            "Temp file deleted'" + newFile.getAbsolutePath() + "'");
-                }
+                closeTempFileOutputBuffer(uploadedFileName);
+                deleteTempFile(uploadedFileName);
 
                 if (!fileReady && newFile.exists() && newFile.delete()) {
                     Application.LOGGER.log(System.Logger.Level.ERROR,
@@ -216,7 +209,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
         return fileReady;
     }
 
-    private void processFile(String subfolderName,
+    protected void processFile(String subfolderName,
                              Path subFolder,
                              String uploadedFileName,
                              BrownieMultiFileBuffer multiFileBuffer,
@@ -260,7 +253,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
         return dialog;
     }
 
-    public void updateDiscCapacity() {
+    protected void updateDiscCapacity() {
         long total = new File("/").getTotalSpace() / (1024 * 1024);
         long free = new File("/").getUsableSpace() / (1024 * 1024);
         String discCapacityText = "Free " + free + "MB of " + total + "MB";
@@ -276,7 +269,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
         if (ui != null) ui.getSession().access(() -> {
             updateDiscCapacity();
             var oldValue = folders.getValue();
-            folders.setItems(getFolders());
+            folders.setItems(MediaDirectories.getFoldersInMedia());
             folders.setValue(oldValue);
         });
     }

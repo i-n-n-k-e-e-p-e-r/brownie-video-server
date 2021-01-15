@@ -151,7 +151,7 @@ public class FileSystemDataProvider
 				params);
 	}
 
-	private LinkedList<File> getAllGridItems() {
+	protected LinkedList<File> getAllGridItems() {
 		LinkedList<File> gridItems = new LinkedList<>();
 		List<File> roots = null;
 		List<File[]> leaves = null;
@@ -171,7 +171,9 @@ public class FileSystemDataProvider
 		return gridItems;
 	}
 
-	private void processEvent(UI ui, EventsManager.EVENT_TYPE eventType, List<File> gridItems, Object... params) {
+	protected boolean processEvent(UI ui, EventsManager.EVENT_TYPE eventType, List<File> gridItems, Object... params) {
+		boolean result = false;
+
 		Application.LOGGER.log(System.Logger.Level.DEBUG, "Updating FileSystemDataProvider " + this);
 
 		switch(eventType) {
@@ -179,9 +181,13 @@ public class FileSystemDataProvider
 			case ENCODING_FINISHED:
 			case FILE_RENAMED: {
 				Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
+				if (gridItems == null) break;
+
 				for (var f : gridItems) {
 					for (var o : forUpdate) {
 						if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
+							result = true;
+
 							if (ui != null) ui.access(() -> refreshItem(f));
 							break;
 						}
@@ -193,12 +199,16 @@ public class FileSystemDataProvider
 			case FILE_CREATED:
 			case FILE_DELETED:
 			case FILE_MOVED: {
+				result = true;
+
 				if (ui != null) ui.access(this::refreshAll);
 				break;
 			}
 
 			default : break;
 		}
+
+		return result;
 	}
 
 	@Override
@@ -374,6 +384,30 @@ public class FileSystemDataProvider
 		}
 
 		return null;
+	}
+
+	public static boolean createNewFile(File newFile) {
+		boolean result;
+
+		try {
+			result = newFile.createNewFile();
+			if (!result) {
+				Application.LOGGER.log(System.Logger.Level.ERROR,
+						"Can't create new file '" + newFile.getAbsolutePath() + "'");
+			}
+		} catch (IOException ex) {
+			Application.LOGGER.log(System.Logger.Level.ERROR,
+					"Can't create new file '" + newFile.getAbsolutePath() + "'", ex);
+
+			result = false;
+		}
+
+		if (!result && newFile.exists() && newFile.delete()) {
+			Application.LOGGER.log(System.Logger.Level.ERROR,
+					"File deleted after creation error '" + newFile.getAbsolutePath() + "'");
+		}
+
+		return result;
 	}
 
 	public static void deleteFileOrDirectory(File fileForDelete) {

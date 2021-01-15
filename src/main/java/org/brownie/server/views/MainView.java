@@ -111,7 +111,7 @@ public class MainView extends AppLayout {
 	}
     
     protected void initMainView() {
-		MediaDirectories.initDirectories();
+		MediaDirectories.initDirectories(UI.getCurrent());
 
        	filesGrid = MainViewComponents.createFilesTreeGrid(this);
 		filesGrid.setSizeFull();

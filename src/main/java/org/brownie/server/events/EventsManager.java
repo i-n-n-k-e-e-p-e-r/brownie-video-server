@@ -61,7 +61,7 @@ public class EventsManager {
             synchronized (listeners) {
                 listeners.computeIfAbsent(eventType,
                     k -> Collections.synchronizedList(new ArrayList<>()))
-                    .parallelStream().forEach(listener -> listener.update(eventType, params));
+                    .forEach(listener -> listener.update(eventType, params));
             }
         }).start();
     }

@@ -121,7 +121,7 @@ public class MainViewComponents {
         playColumn.setSortable(false);
 
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
-        if (mainView.getCurrentUser().getGroup() == User.GROUP.USER.ordinal())
+        if (mainView!= null && mainView.getCurrentUser().getGroup() == User.GROUP.USER.ordinal())
             treeGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
         final FileSystemDataProvider provider = new FileSystemDataProvider(treeGrid, MediaDirectories.mediaDirectory);
