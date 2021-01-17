@@ -60,7 +60,9 @@ public class UsersDialog extends Dialog {
                 if (grid == null || grid.getDataProvider() == null) return;
 
                 var ui = grid.getUI().isPresent() ? grid.getUI().get() : null;
-                if (ui != null) ui.access(() -> {
+                if (ui != null && !ui.isClosing()) ui.access(() -> {
+                    if (ui.isClosing()) return;
+
                     Set<?> selected = grid.getSelectedItems();
                     grid.getDataProvider().refreshAll();
 

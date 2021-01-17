@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -324,7 +325,14 @@ public class FileSystemDataProviderTest {
 
     @Test
     public void testClearTempDirectory() {
-        assertDoesNotThrow(() -> FileSystemDataProvider.clearTempDirectory(new BrownieUploadsFileFactory()));
+        var factory = new BrownieUploadsFileFactory();
+        assertDoesNotThrow(() -> factory.createFile("kuku_1_" + System.currentTimeMillis() + ".tmp"));
+        assertDoesNotThrow(() -> factory.createFile("kuku_2_" + System.currentTimeMillis() + ".tmp"));
+        assertDoesNotThrow(() -> factory.createFile("kuku_3_" + System.currentTimeMillis() + ".tmp"));
+        assertDoesNotThrow(() -> FileSystemDataProvider.clearTempDirectory(factory));
+        AtomicBoolean allDeleted = new AtomicBoolean(true);
+        factory.getTempFiles().forEach(file -> { if (file.exists()) allDeleted.set(false); });
+        assertTrue(allDeleted.get());
     }
 
     @AfterAll

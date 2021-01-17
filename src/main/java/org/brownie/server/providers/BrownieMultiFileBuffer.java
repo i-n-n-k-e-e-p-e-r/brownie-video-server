@@ -3,6 +3,7 @@ package org.brownie.server.providers;
 import com.vaadin.flow.component.upload.MultiFileReceiver;
 import com.vaadin.flow.component.upload.receivers.AbstractFileBuffer;
 import com.vaadin.flow.component.upload.receivers.FileData;
+import org.brownie.server.Application;
 
 import java.io.*;
 import java.util.Collections;
@@ -72,5 +73,41 @@ public class BrownieMultiFileBuffer extends AbstractFileBuffer implements MultiF
 
     public File getTempFile(String fileName) {
         return this.fileNamesToTempFiles.get(fileName);
+    }
+
+    public void deleteTempFile(String uploadedFileName) {
+        File tempFile = this.getTempFile(uploadedFileName);
+        if (tempFile != null && tempFile.exists() && tempFile.delete()) {
+            Application.LOGGER.log(System.Logger.Level.DEBUG,
+                    "Temp file deleted'" + tempFile.getAbsolutePath() + "'");
+        }
+
+        this.factory.getTempFiles().remove(this.fileNamesToTempFiles.get(uploadedFileName));
+    }
+
+    public void removeFile(String fileName) {
+        closeTempFileOutputBuffer(fileName);
+        deleteTempFile(fileName);
+
+        this.fileNamesToTempFiles.remove(fileName);
+        this.files.remove(fileName);
+    }
+
+    public void closeTempFileOutputBuffer(String uploadedFileName) {
+        try {
+            this.getFileData(uploadedFileName).getOutputBuffer().close();
+        } catch (IOException e) {
+            Application.LOGGER.log(System.Logger.Level.ERROR,
+                    " '" + uploadedFileName + "'", e);
+        }
+    }
+
+    public void flushTempFileOutputBuffer(String uploadedFileName) {
+        try {
+            this.getFileData(uploadedFileName).getOutputBuffer().flush();
+        } catch (IOException e) {
+            Application.LOGGER.log(System.Logger.Level.ERROR,
+                    " '" + uploadedFileName + "'", e);
+        }
     }
 }

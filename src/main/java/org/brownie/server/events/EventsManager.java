@@ -4,6 +4,7 @@ import org.brownie.server.Application;
 
 import javax.validation.constraints.NotNull;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class EventsManager {
 
@@ -59,9 +60,10 @@ public class EventsManager {
         Application.LOGGER.log(System.Logger.Level.DEBUG, "Notify all listeners");
         new Thread(() -> {
             synchronized (listeners) {
-                listeners.computeIfAbsent(eventType,
-                    k -> Collections.synchronizedList(new ArrayList<>()))
-                    .forEach(listener -> listener.update(eventType, params));
+                var results = listeners.computeIfAbsent(eventType, k -> Collections.synchronizedList(new ArrayList<>()))
+                        .parallelStream().map(listener -> listener.update(eventType, params))
+                        .collect(Collectors.toList());
+                results.clear();
             }
         }).start();
     }

@@ -32,8 +32,6 @@ public class UploadsDialog extends Dialog implements IEventListener {
 
     private final Label discCapacity = new Label("");
     private final ComboBox<String> folders;
-    private BrownieMultiFileBuffer multiFileBuffer = null;
-    private BrownieUploadsFileFactory tempFilesFactory = null;
     private Upload upload = null;
     private final Button closeButton = CommonComponents.createButton("Close",
             VaadinIcon.CLOSE_CIRCLE.create(),
@@ -64,10 +62,19 @@ public class UploadsDialog extends Dialog implements IEventListener {
         folders.setAllowCustomValue(true);
         folders.setPlaceholder("Type the name or choose");
         folders.addCustomValueSetListener(event -> {
-            List<String> newValues = MediaDirectories.getFoldersInMedia();
-            newValues.add(event.getDetail());
-            folders.setItems(newValues);
-            folders.setValue(event.getDetail());
+            new Thread(() -> {
+                List<String> newValues = MediaDirectories.getFoldersInMedia();
+                newValues.add(event.getDetail());
+
+                var ui = mainLayout.getUI().isPresent() ? mainLayout.getUI().get() : null;
+                if (ui != null && !ui.isClosing()) {
+                    ui.access(() -> {
+                        if (ui.isClosing()) return;
+                        folders.setItems(newValues);
+                        folders.setValue(event.getDetail());
+                    });
+                }
+            }).start();
         });
         folders.setValue("");
 
@@ -87,8 +94,8 @@ public class UploadsDialog extends Dialog implements IEventListener {
 
         this.addOpenedChangeListener(event -> {
             if (event.isOpened()) {
-                tempFilesFactory = new BrownieUploadsFileFactory();
-                multiFileBuffer = new BrownieMultiFileBuffer(tempFilesFactory);
+                BrownieUploadsFileFactory tempFilesFactory = new BrownieUploadsFileFactory();
+                BrownieMultiFileBuffer multiFileBuffer = new BrownieMultiFileBuffer(tempFilesFactory);
 
                 upload = new Upload(multiFileBuffer);
                 upload.getStyle().set("overflow", "auto");
@@ -114,17 +121,9 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 mainLayout.add(upload, closeButton);
             } else {
                 mainLayout.remove(upload);
-                upload = null;
                 mainLayout.remove(closeButton);
+                upload = null;
             }
-
-            if (tempFilesFactory != null)
-                FileSystemDataProvider.clearTempDirectory(tempFilesFactory);
-        });
-
-        this.addDetachListener(event -> {
-            if (tempFilesFactory != null)
-                FileSystemDataProvider.clearTempDirectory(tempFilesFactory);
         });
     }
 
@@ -136,39 +135,13 @@ public class UploadsDialog extends Dialog implements IEventListener {
         }
     }
 
-    protected void flushTempFileOutputBuffer(String uploadedFileName) {
-        try {
-            multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().flush();
-        } catch (IOException e) {
-            Application.LOGGER.log(System.Logger.Level.ERROR,
-                    " '" + uploadedFileName + "'", e);
-        }
-    }
-
-    protected void closeTempFileOutputBuffer(String uploadedFileName) {
-        try {
-            multiFileBuffer.getFileData(uploadedFileName).getOutputBuffer().close();
-        } catch (IOException e) {
-            Application.LOGGER.log(System.Logger.Level.ERROR,
-                    " '" + uploadedFileName + "'", e);
-        }
-    }
-
-    protected void deleteTempFile(String uploadedFileName) {
-        File tempFile = multiFileBuffer.getTempFile(uploadedFileName);
-        if (tempFile != null && tempFile.exists() && tempFile.delete()) {
-            Application.LOGGER.log(System.Logger.Level.DEBUG,
-                    "Temp file deleted'" + tempFile.getAbsolutePath() + "'");
-        }
-    }
-
     protected boolean prepareUploadedFile(String uploadedFileName, File newFile, BrownieMultiFileBuffer filesBuffer) {
-        flushTempFileOutputBuffer(uploadedFileName);
+        filesBuffer.flushTempFileOutputBuffer(uploadedFileName);
 
         boolean fileReady = FileSystemDataProvider.createNewFile(newFile);
 
         if (!fileReady) {
-            closeTempFileOutputBuffer(uploadedFileName);
+            filesBuffer.removeFile(uploadedFileName);
             return false;
         }
 
@@ -196,8 +169,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Error while closing streams '" + newFile.getAbsolutePath() + "'", e);
             } finally {
-                closeTempFileOutputBuffer(uploadedFileName);
-                deleteTempFile(uploadedFileName);
+                filesBuffer.removeFile(uploadedFileName);
 
                 if (!fileReady && newFile.exists() && newFile.delete()) {
                     Application.LOGGER.log(System.Logger.Level.ERROR,
@@ -264,14 +236,20 @@ public class UploadsDialog extends Dialog implements IEventListener {
     }
 
     @Override
-    public void update(EventsManager.EVENT_TYPE eventType, Object... params) {
+    public boolean update(EventsManager.EVENT_TYPE eventType, Object... params) {
         var ui = this.getUI().isPresent() ? this.getUI().get() : null;
-        if (ui != null) ui.getSession().access(() -> {
-            updateDiscCapacity();
-            var oldValue = folders.getValue();
-            folders.setItems(MediaDirectories.getFoldersInMedia());
-            folders.setValue(oldValue);
-        });
+        if (ui != null && !ui.isClosing()) {
+            ui.access(() -> {
+                if (ui.isClosing()) return;
+
+                updateDiscCapacity();
+                var oldValue = folders.getValue();
+                folders.setItems(MediaDirectories.getFoldersInMedia());
+                folders.setValue(oldValue);
+            });
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -284,4 +262,5 @@ public class UploadsDialog extends Dialog implements IEventListener {
 
         return types;
     }
+
 }

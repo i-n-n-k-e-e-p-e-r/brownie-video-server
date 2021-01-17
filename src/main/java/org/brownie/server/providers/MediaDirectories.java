@@ -3,6 +3,7 @@ package org.brownie.server.providers;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.notification.Notification;
 import org.brownie.server.Application;
+import org.brownie.server.events.EventsManager;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -86,6 +87,8 @@ public class MediaDirectories {
             if (pathWithSubfolder.toFile().mkdir()) {
                 Application.LOGGER.log(System.Logger.Level.INFO,
                         "Sub folder created '" + pathWithSubfolder.toFile() + "'");
+                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED,
+                        pathWithSubfolder.toFile());
             } else {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Can't create sub folder '" + pathWithSubfolder.toFile() + "'");

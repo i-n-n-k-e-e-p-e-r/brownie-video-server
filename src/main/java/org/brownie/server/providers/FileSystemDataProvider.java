@@ -144,8 +144,8 @@ public class FileSystemDataProvider
 	}
 
 	@Override
-	public void update(EventsManager.EVENT_TYPE eventType, Object... params) {
-		processEvent(grid.getUI().isPresent() ? grid.getUI().get() : null,
+	public boolean update(EventsManager.EVENT_TYPE eventType, Object... params) {
+		return processEvent(grid.getUI().isPresent() ? grid.getUI().get() : null,
 				eventType,
 				getAllGridItems(),
 				params);
@@ -188,7 +188,7 @@ public class FileSystemDataProvider
 						if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
 							result = true;
 
-							if (ui != null) ui.access(() -> refreshItem(f));
+							if (ui != null && !ui.isClosing()) ui.access(() -> { if (!ui.isClosing()) refreshItem(f); });
 							break;
 						}
 					}
@@ -201,7 +201,11 @@ public class FileSystemDataProvider
 			case FILE_MOVED: {
 				result = true;
 
-				if (ui != null) ui.access(this::refreshAll);
+				if (ui != null && !ui.isClosing()) {
+					ui.access(() -> {
+						if (!ui.isClosing()) this.refreshAll();
+					});
+				}
 				break;
 			}
 
