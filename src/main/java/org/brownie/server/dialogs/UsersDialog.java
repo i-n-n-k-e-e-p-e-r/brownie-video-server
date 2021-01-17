@@ -60,7 +60,9 @@ public class UsersDialog extends Dialog {
                 if (grid == null || grid.getDataProvider() == null) return;
 
                 var ui = grid.getUI().isPresent() ? grid.getUI().get() : null;
-                if (ui != null) ui.access(() -> {
+                if (ui != null && !ui.isClosing()) ui.access(() -> {
+                    if (ui.isClosing()) return;
+
                     Set<?> selected = grid.getSelectedItems();
                     grid.getDataProvider().refreshAll();
 
@@ -162,7 +164,7 @@ public class UsersDialog extends Dialog {
         confirmDialog.addRejectListener(rEvent -> confirmDialog.close());
         confirmDialog.addConfirmListener(confirmed -> {
             User user = usersGrid.getSelectedItems().iterator().next();
-            user.deleteUserFromDB();
+            user.deleteUserFromDB(DBConnectionProvider.getInstance());
             Application.LOGGER.log(System.Logger.Level.INFO,
                     "Deleted user '" + user.getName() + "'");
             updateUsers();

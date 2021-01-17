@@ -15,6 +15,7 @@ public class BrownieUploadsFileFactory implements FileFactory {
     public File createFile(String s) throws IOException {
         String tempFileName = FileSystemDataProvider.TEMP_UPLOADED_FILE_PREFIX + s + "_" + System.currentTimeMillis();
         File tempFile = File.createTempFile(tempFileName, null);
+        tempFile.deleteOnExit();
         tempFiles.add(tempFile);
         return tempFile;
     }

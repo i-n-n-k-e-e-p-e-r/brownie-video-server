@@ -11,6 +11,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import org.brownie.server.Application;
+import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
 import org.brownie.server.security.SecurityFunctions;
 
@@ -159,7 +160,7 @@ public class UserEditDialog extends Dialog {
 			isAdmin.setValue(getUser().getGroup() == User.GROUP.ADMIN.ordinal());
 		}
 
-		if (User.getAdminsCount() == 0) {
+		if (User.getAdminsCount(DBConnectionProvider.getInstance()) == 0) {
 			isAdmin.setValue(true);
 			isAdmin.setEnabled(false);
 		}
@@ -197,7 +198,7 @@ public class UserEditDialog extends Dialog {
 				return false;
 			}
 
-			if (!User.isUserNameFreeToUse(userName.getValue().trim())) {
+			if (!User.isUserNameFreeToUse(DBConnectionProvider.getInstance(), userName.getValue().trim())) {
 				Notification.show("User name is not allowed");
 				return false;
 			}
@@ -222,7 +223,7 @@ public class UserEditDialog extends Dialog {
 				randomSalt,
 				(isAdmin ? User.GROUP.ADMIN.ordinal() : User.GROUP.USER.ordinal()));
 		try {
-			user.updateUserDBData();
+			user.updateUserDBData(DBConnectionProvider.getInstance());
 		} catch (SQLException e1) {
 			Application.LOGGER.log(System.Logger.Level.ERROR,
 					"Error while creating user '" + userName + "'",
@@ -240,7 +241,7 @@ public class UserEditDialog extends Dialog {
 				"Updating user '" + user.getName() + "'");
 
 		try {
-			user.updateUserDBData();
+			user.updateUserDBData(DBConnectionProvider.getInstance());
 		} catch (SQLException e1) {
 			Application.LOGGER.log(System.Logger.Level.ERROR,
 					"Error while saving user '" + user.getName() + "'",

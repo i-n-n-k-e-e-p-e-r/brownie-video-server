@@ -101,7 +101,9 @@ public class SystemLoadDialog extends Dialog {
 
     public void updateSystemLoadValues() {
         var ui = this.getUI().isPresent() ? this.getUI().get() : null;
-        if (ui != null) ui.getSession().access(() -> {
+        if (ui != null && !ui.isClosing()) ui.access(() -> {
+            if (ui.isClosing()) return;
+
             cpuLoad.setText(String.format(CPU_LOAD_FORMAT, monitor.getSystemCpuLoad() * 100));
 
             double freeMemory = (double)monitor.getFreePhysicalMemorySize() / (1024 * 1024);

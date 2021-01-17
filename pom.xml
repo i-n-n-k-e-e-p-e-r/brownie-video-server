@@ -3,7 +3,7 @@
     <groupId>org.brownie.server</groupId>
     <artifactId>brownie-video-server</artifactId>
     <name>Brownie Video Server</name>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
 <!--    <packaging>war</packaging>-->
     <packaging>jar</packaging>
 
@@ -126,6 +126,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <version>1.4.0.RELEASE</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-testbench</artifactId>
             <scope>test</scope>
@@ -169,6 +175,16 @@
             <groupId>ws.schild</groupId>
             <artifactId>jave-core</artifactId>
             <version>3.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -158,6 +158,7 @@ public class VideoDecoder {
             } catch (IOException | EncoderException e) {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Error while encoding file '" + targetFile.getAbsolutePath() + "'", e);
+
                 e.printStackTrace();
             } finally {
                 queue.remove(targetFile.getAbsolutePath());

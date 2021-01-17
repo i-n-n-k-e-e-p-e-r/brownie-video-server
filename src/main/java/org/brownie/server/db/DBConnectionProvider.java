@@ -23,12 +23,13 @@ public class DBConnectionProvider {
 	
 	private static DBConnectionProvider provider = null;
 	private final String connectionString;
+	private final File dbFile;
 	
 	private ConnectionSource connectionSource;
 	private final Map<Class<?>, Dao<?, ?>> ormDaos = Collections.synchronizedMap(new HashMap<>());
 
-	private DBConnectionProvider() throws SQLException {
-		File dbFile = new File(Application.BASE_PATH + File.separator + DB_NAME);
+	protected DBConnectionProvider(String dbName) throws SQLException {
+		this.dbFile = new File(Application.BASE_PATH + File.separator + dbName);
 		this.connectionString = "jdbc:sqlite:" + dbFile.getAbsolutePath();
 		Application.LOGGER.log(System.Logger.Level.INFO,
 				"DB connection string '" + this.connectionString + "'");
@@ -38,7 +39,7 @@ public class DBConnectionProvider {
 					"Can't locate sqlite DB file " + dbFile.getAbsolutePath());
 			createDataBase();
 		}
-		
+
 		initDataTables();
 	}
 	
@@ -46,7 +47,7 @@ public class DBConnectionProvider {
 		synchronized(DBConnectionProvider.class) {
 			if (provider == null) {
 				try {
-					provider = new DBConnectionProvider();
+					provider = new DBConnectionProvider(DB_NAME);
 				} catch (SQLException e) {
 					Application.LOGGER.log(System.Logger.Level.ERROR,
 							"Error while creating DBConnectionProvider", e);
@@ -92,7 +93,7 @@ public class DBConnectionProvider {
     	return result;
     }
 	
-	private void initDataTables() throws SQLException {
+	public int initDataTables() throws SQLException {
         // create a connection source to our database
         this.connectionSource =
             new JdbcConnectionSource(this.connectionString);
@@ -101,7 +102,7 @@ public class DBConnectionProvider {
         getOrmDaos().put(User.class, DaoManager.createDao(connectionSource, User.class));
 
         // TODO init all tables
-        TableUtils.createTableIfNotExists(connectionSource, User.class);
+        return TableUtils.createTableIfNotExists(connectionSource, User.class);
 	}
 	
 	public ConnectionSource getConnectionSource() {
@@ -111,4 +112,6 @@ public class DBConnectionProvider {
 	public Map<Class<?>, Dao<?, ?>> getOrmDaos() {
 		return this.ormDaos;
 	}
+
+	public File getDbFile() { return this.dbFile; }
 }

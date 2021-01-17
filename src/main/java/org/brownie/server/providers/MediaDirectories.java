@@ -1,18 +1,24 @@
 package org.brownie.server.providers;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.notification.Notification;
 import org.brownie.server.Application;
+import org.brownie.server.events.EventsManager;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class MediaDirectories {
 
     public static File mediaDirectory;
     public static File uploadsDirectory;
 
-    public static synchronized void initDirectories() {
+    public static synchronized void initDirectories(UI ui) {
         mediaDirectory = Paths.get(Application.BASE_PATH + File.separator + "media_files").toFile();
         uploadsDirectory = Paths.get(Application.BASE_PATH + File.separator + "uploads").toFile();
 
@@ -40,18 +46,22 @@ public class MediaDirectories {
 
         if (!mediaCreated || mediaDirectory == null || !mediaDirectory.exists() || !mediaDirectory.isDirectory()) {
             String msg = "Can't locate or create media files directory";
-            if (mediaDirectory != null)
-                Notification.show(msg + " '" + mediaDirectory.getAbsolutePath() + "'");
-            else
-                Notification.show(msg);
+            if (ui != null)
+                if (mediaDirectory != null) {
+                    Notification.show(msg + " '" + mediaDirectory.getAbsolutePath() + "'");
+                } else {
+                    Notification.show(msg);
+                }
             Application.LOGGER.log(System.Logger.Level.ERROR, msg);
         }
         if (!uploadCreated || uploadsDirectory == null || !uploadsDirectory.exists() || !uploadsDirectory.isDirectory()) {
             String msg = "Can't locate or create uploads directory";
-            if (uploadsDirectory != null)
-                Notification.show(msg + " '" + uploadsDirectory.getAbsolutePath() + "'");
-            else
-                Notification.show(msg);
+            if (ui != null)
+                if (uploadsDirectory != null) {
+                    Notification.show(msg + " '" + uploadsDirectory.getAbsolutePath() + "'");
+                } else {
+                    Notification.show(msg);
+                }
             Application.LOGGER.log(System.Logger.Level.ERROR, msg);
         }
     }
@@ -77,6 +87,8 @@ public class MediaDirectories {
             if (pathWithSubfolder.toFile().mkdir()) {
                 Application.LOGGER.log(System.Logger.Level.INFO,
                         "Sub folder created '" + pathWithSubfolder.toFile() + "'");
+                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED,
+                        pathWithSubfolder.toFile());
             } else {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Can't create sub folder '" + pathWithSubfolder.toFile() + "'");
@@ -100,5 +112,13 @@ public class MediaDirectories {
                                 Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().getAbsolutePath() + "'");
             }
         }
+    }
+
+    public static List<String> getFoldersInMedia() {
+        return Arrays.stream(Objects.requireNonNull(MediaDirectories.mediaDirectory.listFiles()))
+                .filter(File::isDirectory)
+                .map(File::getName)
+                .sorted()
+                .collect(Collectors.toList());
     }
 }

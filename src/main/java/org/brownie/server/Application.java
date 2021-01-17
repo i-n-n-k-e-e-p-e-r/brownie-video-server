@@ -26,8 +26,8 @@ public class Application extends SpringBootServletInitializer {
                     Paths.get("").toFile().getAbsolutePath() : System.getProperty("catalina.base");
     public static final String TMP_DIR = System.getProperty("java.io.tmpdir");
 
-    public static final long MAX_UPLOAD_FILE_SIZE = 20480000000L;
-    public static final long MAX_REQUEST_SIZE = 20480000000L;
+    public static final long MAX_UPLOAD_FILE_SIZE = 40960000000L;
+    public static final long MAX_REQUEST_SIZE = 40960000000L;
 
     public static final System.Logger LOGGER = System.getLogger("Brownie server");
 
