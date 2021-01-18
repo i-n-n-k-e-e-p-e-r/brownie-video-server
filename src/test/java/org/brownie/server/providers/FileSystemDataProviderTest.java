@@ -121,7 +121,7 @@ public class FileSystemDataProviderTest {
     @Test
     public void testGetAllGridItems() {
         if (!MediaDirectories.mediaDirectory.exists())
-            assertDoesNotThrow(() -> MediaDirectories.mediaDirectory.mkdirs());
+            assertDoesNotThrow(MediaDirectories.mediaDirectory::mkdirs);
         File testFile = Paths.get(MediaDirectories.mediaDirectory.getAbsolutePath(),
                 "test_getALLGridItems.test").toFile();
         if (!testFile.exists())
@@ -274,9 +274,9 @@ public class FileSystemDataProviderTest {
     @Test
     public void testCopyUploadedFile() {
         if (!MediaDirectories.mediaDirectory.exists())
-            assertDoesNotThrow(() -> MediaDirectories.mediaDirectory.mkdirs());
+            assertDoesNotThrow(MediaDirectories.mediaDirectory::mkdirs);
         if (!MediaDirectories.uploadsDirectory.exists())
-            assertDoesNotThrow(() -> MediaDirectories.uploadsDirectory.mkdirs());
+            assertDoesNotThrow(MediaDirectories.uploadsDirectory::mkdirs);
 
         File subFolderInUploads = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
                 "unit_tests_folder").toFile();
@@ -305,8 +305,8 @@ public class FileSystemDataProviderTest {
                 subFolderInUploads.getName(), fileInUploads.getName()).toFile().delete());
         assertDoesNotThrow(() -> Paths.get(MediaDirectories.mediaDirectory.getAbsolutePath(),
                 subFolderInUploads.getName()).toFile().delete());
-        assertDoesNotThrow(() -> MediaDirectories.mediaDirectory.delete());
-        assertDoesNotThrow(() -> MediaDirectories.uploadsDirectory.delete());
+        assertDoesNotThrow(MediaDirectories.mediaDirectory::delete);
+        assertDoesNotThrow(MediaDirectories.uploadsDirectory::delete);
     }
 
     @Test

@@ -364,7 +364,7 @@ public class FileSystemDataProvider
 			}
 
 			if (folderName.trim().length() > 0) {
-				MediaDirectories.clearUploadsSubFolder(folderName.trim());
+				MediaDirectories.deleteUploadsSubFolder(folderName.trim());
 			}
 
 			EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED);

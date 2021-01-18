@@ -76,6 +76,8 @@ public class BrownieMultiFileBuffer extends AbstractFileBuffer implements MultiF
     }
 
     public void deleteTempFile(String uploadedFileName) {
+        if (uploadedFileName == null || uploadedFileName.length() == 0) return;
+
         File tempFile = this.getTempFile(uploadedFileName);
         if (tempFile != null && tempFile.exists() && tempFile.delete()) {
             Application.LOGGER.log(System.Logger.Level.DEBUG,
@@ -109,5 +111,9 @@ public class BrownieMultiFileBuffer extends AbstractFileBuffer implements MultiF
             Application.LOGGER.log(System.Logger.Level.ERROR,
                     " '" + uploadedFileName + "'", e);
         }
+    }
+
+    public BrownieUploadsFileFactory getTempFilesFactory() {
+        return this.factory;
     }
 }

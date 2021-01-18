@@ -62,7 +62,7 @@ public class VideoDecoder {
             }
 
             if (folderName.trim().length() > 0) {
-                MediaDirectories.clearUploadsSubFolder(folderName.trim());
+                MediaDirectories.deleteUploadsSubFolder(folderName.trim());
             }
 
             return;
@@ -181,7 +181,7 @@ public class VideoDecoder {
                 }
 
                 if (folderName.trim().length() > 0) {
-                    MediaDirectories.clearUploadsSubFolder(folderName.trim());
+                    MediaDirectories.deleteUploadsSubFolder(folderName.trim());
                 }
             }
         }

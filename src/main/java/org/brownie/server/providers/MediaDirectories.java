@@ -15,13 +15,10 @@ import java.util.stream.Collectors;
 
 public class MediaDirectories {
 
-    public static File mediaDirectory;
-    public static File uploadsDirectory;
+    public static final File mediaDirectory = Paths.get(Application.BASE_PATH + File.separator + "media_files").toFile();
+    public static final File uploadsDirectory = Paths.get(Application.BASE_PATH + File.separator + "uploads").toFile();
 
     public static synchronized void initDirectories(UI ui) {
-        mediaDirectory = Paths.get(Application.BASE_PATH + File.separator + "media_files").toFile();
-        uploadsDirectory = Paths.get(Application.BASE_PATH + File.separator + "uploads").toFile();
-
         if (mediaDirectory.exists() && uploadsDirectory.exists()) {
             Application.LOGGER.log(System.Logger.Level.INFO,
                     "Using media directory '" + mediaDirectory.getAbsolutePath() + "'");
@@ -44,24 +41,15 @@ public class MediaDirectories {
                     "Created uploads directory '" + uploadsDirectory.getAbsolutePath() + "'");
         }
 
-        if (!mediaCreated || mediaDirectory == null || !mediaDirectory.exists() || !mediaDirectory.isDirectory()) {
+        if (!mediaCreated || !mediaDirectory.exists() || !mediaDirectory.isDirectory()) {
             String msg = "Can't locate or create media files directory";
-            if (ui != null)
-                if (mediaDirectory != null) {
-                    Notification.show(msg + " '" + mediaDirectory.getAbsolutePath() + "'");
-                } else {
-                    Notification.show(msg);
-                }
+            if (ui != null) Notification.show(msg + " '" + mediaDirectory.getAbsolutePath() + "'");
             Application.LOGGER.log(System.Logger.Level.ERROR, msg);
         }
-        if (!uploadCreated || uploadsDirectory == null || !uploadsDirectory.exists() || !uploadsDirectory.isDirectory()) {
+
+        if (!uploadCreated || !uploadsDirectory.exists() || !uploadsDirectory.isDirectory()) {
             String msg = "Can't locate or create uploads directory";
-            if (ui != null)
-                if (uploadsDirectory != null) {
-                    Notification.show(msg + " '" + uploadsDirectory.getAbsolutePath() + "'");
-                } else {
-                    Notification.show(msg);
-                }
+            if (ui != null) Notification.show(msg + " '" + uploadsDirectory.getAbsolutePath() + "'");
             Application.LOGGER.log(System.Logger.Level.ERROR, msg);
         }
     }
@@ -98,7 +86,7 @@ public class MediaDirectories {
         return pathWithSubfolder;
     }
 
-    public static synchronized void clearUploadsSubFolder(String folderName) {
+    public static synchronized void deleteUploadsSubFolder(String folderName) {
         File[] uploadedFiles = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().listFiles();
         if (Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(), folderName).toFile().exists() &&
                 uploadedFiles != null && uploadedFiles.length == 0) {
