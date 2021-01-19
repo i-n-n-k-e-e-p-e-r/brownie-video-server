@@ -27,14 +27,33 @@ import org.brownie.server.recoder.VideoDecoder;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class MainViewComponents {
     public static MenuBar createMenuBar(MainView mainView) {
         MenuBar menuBar = new MenuBar();
 
+        MenuItem file = menuBar.addItem("File");
+        file.getSubMenu().addItem("Mark as unseen", e -> {
+            if (mainView.getFilesGrid() == null
+                    || mainView.getFilesGrid().getSelectedItems().size() == 0) {
+                return;
+            }
+            mainView.getFilesGrid().getSelectedItems().forEach(f -> {
+                if (!f.isDirectory() && !isNotSupported(f)) {
+                    List<UserToFileState> states = UserToFileState.getEntry(DBConnectionProvider.getInstance(),
+                            f.getName(),
+                            mainView.getCurrentUser());
+                    if (states != null && states.size() >= 1) {
+                        states.iterator().next().deleteEntry(DBConnectionProvider.getInstance());
+                        EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE, f);
+                    }
+                }
+            });
+        });
+
         if (mainView.getCurrentUser().getGroup() == User.GROUP.ADMIN.ordinal()) {
-            MenuItem file = menuBar.addItem("File");
             file.addComponentAsFirst(VaadinIcon.CLIPBOARD_TEXT.create());
 
             file.getSubMenu().addItem("Uploads", e -> UploadsDialog.showUploadsDialog());
