@@ -6,6 +6,7 @@ import com.j256.ormlite.table.DatabaseTable;
 import org.brownie.server.Application;
 
 import javax.validation.constraints.NotNull;
+import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -27,10 +28,10 @@ public class UserToFileState {
         // ORMLite needs a no-arg constructor
     }
 
-    public UserToFileState(@NotNull User user, @NotNull String fileName) {
+    public UserToFileState(@NotNull User user, @NotNull File file) {
         this.entryId = null;
         this.user = user;
-        this.fileName = fileName;
+        this.fileName = file.getAbsolutePath();
 
         // TODO continue playing
         this.pausedAt = 0;
@@ -38,11 +39,11 @@ public class UserToFileState {
 
     @SuppressWarnings("unchecked")
     public static List<UserToFileState> getEntry(DBConnectionProvider provider,
-                                                  String fileName, User user) {
+                                                  File file, User user) {
         List<UserToFileState> result = new ArrayList<>();
         
         Map<String, Object> fields = new HashMap<>();
-        fields.put("fileName", fileName);
+        fields.put("fileName", file.getAbsolutePath());
         fields.put("user_id", user.getUserId());
 
         try {
@@ -83,11 +84,11 @@ public class UserToFileState {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<UserToFileState> getEntriesForFile(DBConnectionProvider provider, String fileName) {
+    public static List<UserToFileState> getEntriesForFile(DBConnectionProvider provider, File file) {
         List<UserToFileState> result = new ArrayList<>();
 
         Map<String, Object> fields = new HashMap<>();
-        fields.put("fileName", fileName);
+        fields.put("fileName", file.getAbsolutePath());
 
         try {
             result = ((Dao<UserToFileState, Integer>)provider.getOrmDaos()
@@ -132,8 +133,8 @@ public class UserToFileState {
         return fileName;
     }
 
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
+    public void setFileName(File file) {
+        this.fileName = file.getAbsolutePath();
     }
 
     public Integer getPausedAt() {

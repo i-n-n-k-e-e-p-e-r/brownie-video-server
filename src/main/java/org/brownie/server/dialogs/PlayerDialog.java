@@ -54,15 +54,16 @@ public class PlayerDialog extends Dialog {
 		AppLayout mainLayout = new AppLayout();
 		mainLayout.addAttachListener(event -> {
 			// TODO more smart control for (new/watched states)
-			UserToFileState state = new UserToFileState(mainView.getCurrentUser(), media.getName());
+			UserToFileState state = new UserToFileState(mainView.getCurrentUser(), media);
 			try {
 				if (UserToFileState.getEntry(DBConnectionProvider.getInstance(),
-						media.getName(),
+						media,
 						mainView.getCurrentUser()).size() == 0) {
 					state.updateEntry(DBConnectionProvider.getInstance());
 
 					EventsManager.getManager()
-							.notifyAllListeners(EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE, media);
+							.notifyAllListeners(EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE,
+									mainView.getCurrentUser(), media);
 				}
 			} catch (SQLException e) {
 				// It's OK (file probably watched)

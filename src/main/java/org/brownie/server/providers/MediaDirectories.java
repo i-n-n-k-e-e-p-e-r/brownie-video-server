@@ -76,7 +76,7 @@ public class MediaDirectories {
                 Application.LOGGER.log(System.Logger.Level.INFO,
                         "Sub folder created '" + pathWithSubfolder.toFile() + "'");
                 EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED,
-                        pathWithSubfolder.toFile());
+                        null, pathWithSubfolder.toFile());
             } else {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Can't create sub folder '" + pathWithSubfolder.toFile() + "'");

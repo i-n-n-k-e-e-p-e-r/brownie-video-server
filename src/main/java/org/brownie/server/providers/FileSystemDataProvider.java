@@ -9,6 +9,7 @@ import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataPr
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 import org.brownie.server.Application;
 import org.brownie.server.db.DBConnectionProvider;
+import org.brownie.server.db.User;
 import org.brownie.server.db.UserToFileState;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.events.IEventListener;
@@ -39,6 +40,7 @@ public class FileSystemDataProvider
 	public static final String TEMP_UPLOADED_FILE_PREFIX = "brownie_upload_tmpfile_";
 	private final File root;
 	private final TreeGrid<File> grid;
+	private User user = null;
 
 	private static final Comparator<File> fileComparator = (fileA, fileB) -> {
 		if ((!fileA.isDirectory() && !fileB.isDirectory()) || (fileA.isDirectory() && fileB.isDirectory())) {
@@ -55,6 +57,14 @@ public class FileSystemDataProvider
 	public FileSystemDataProvider(TreeGrid<File> grid, File root) {
 		this.grid = grid;
 		this.root = root;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
+	}
+
+	public User getUser() {
+		return this.user;
 	}
 
 	private static Set<String> getVideoFormats() {
@@ -146,8 +156,9 @@ public class FileSystemDataProvider
 	}
 
 	@Override
-	public boolean update(EventsManager.EVENT_TYPE eventType, Object... params) {
+	public boolean update(EventsManager.EVENT_TYPE eventType, User user, Object... params) {
 		return processEvent(grid.getUI().isPresent() ? grid.getUI().get() : null,
+				user,
 				eventType,
 				getAllGridItems(),
 				params);
@@ -173,7 +184,7 @@ public class FileSystemDataProvider
 		return gridItems;
 	}
 
-	protected boolean processEvent(UI ui, EventsManager.EVENT_TYPE eventType, List<File> gridItems, Object... params) {
+	protected boolean processEvent(UI ui, User user, EventsManager.EVENT_TYPE eventType, List<File> gridItems, Object... params) {
 		boolean result = false;
 
 		Application.LOGGER.log(System.Logger.Level.DEBUG, "Updating FileSystemDataProvider " + this);
@@ -181,8 +192,7 @@ public class FileSystemDataProvider
 		switch(eventType) {
 			case FILE_WATCHED_STATE_CHANGE:
 			case ENCODING_STARTED:
-			case ENCODING_FINISHED:
-			case FILE_RENAMED: {
+			case ENCODING_FINISHED: {
 				Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
 				if (gridItems == null) break;
 
@@ -207,6 +217,36 @@ public class FileSystemDataProvider
 				if (ui != null && !ui.isClosing()) {
 					ui.access(() -> {
 						if (!ui.isClosing()) this.refreshAll();
+					});
+				}
+				break;
+			}
+			case FILE_RENAMED: {
+				result = true;
+
+				if (ui != null && !ui.isClosing()) {
+					ui.access(() -> {
+						if (!ui.isClosing()) {
+							this.refreshAll();
+						}
+
+						Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
+						if (gridItems == null) return;
+
+						for (var f : gridItems) {
+							for (var o : forUpdate) {
+								if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
+									if (!ui.isClosing()
+											&& getUser() != null
+											&& user != null
+											&& user.getUserId().equals(getUser().getUserId())) {
+										grid.deselectAll();
+										grid.select(f);
+									}
+									break;
+								}
+							}
+						}
 					});
 				}
 				break;
@@ -371,7 +411,7 @@ public class FileSystemDataProvider
 				MediaDirectories.deleteUploadsSubFolder(folderName.trim());
 			}
 
-			EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED);
+			EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED, null);
 		}
 	}
 
@@ -446,7 +486,7 @@ public class FileSystemDataProvider
 
 	public static void deleteFile(File fileForDelete) {
 		UserToFileState.getEntriesForFile(DBConnectionProvider.getInstance(),
-				fileForDelete.getName())
+				fileForDelete)
 				.forEach(entry -> entry.deleteEntry(DBConnectionProvider.getInstance()));
 
 		if (fileForDelete.delete()) {

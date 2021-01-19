@@ -140,37 +140,37 @@ public class FileSystemDataProviderTest {
         FileSystemDataProvider provider =
                 new FileSystemDataProvider(MainViewComponents.createFilesTreeGrid(null), root);
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE,
                 provider.getAllGridItems(),
                 Arrays.stream(Objects.requireNonNull(root.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.FILE_CREATED,
                 provider.getAllGridItems(),
                 Arrays.stream(Objects.requireNonNull(root.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.FILE_CREATED,
                 provider.getAllGridItems(),
                 Arrays.stream(Objects.requireNonNull(folder1.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.ENCODING_FINISHED,
                 provider.getAllGridItems(),
                 Arrays.stream(Objects.requireNonNull(root.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.ENCODING_FINISHED,
                 provider.getAllGridItems(),
                 Arrays.stream(Objects.requireNonNull(folder1.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.FILE_CREATED,
                 null,
                 Arrays.stream(Objects.requireNonNull(root.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.FILE_CREATED,
                 null));
     }

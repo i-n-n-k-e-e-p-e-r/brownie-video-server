@@ -88,7 +88,7 @@ public class VideoDecoder {
                 Application.LOGGER.log(System.Logger.Level.ERROR,
                         "Can't create file '" + source.getAbsolutePath());
             }
-            EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED, target);
+            EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED, null, target);
         }
 
         Encoder encoder = new Encoder();
@@ -147,7 +147,7 @@ public class VideoDecoder {
         public void run() {
             try {
                 queue.add(targetFile.getAbsolutePath());
-                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_STARTED, targetFile);
+                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_STARTED, null, targetFile);
 
                 Application.LOGGER.log(System.Logger.Level.INFO,
                         "Files in queue " + queue.size() + ". Added '" + targetFile.getAbsolutePath() + "'");
@@ -163,7 +163,7 @@ public class VideoDecoder {
             } finally {
                 queue.remove(targetFile.getAbsolutePath());
 
-                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_FINISHED, targetFile);
+                EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.ENCODING_FINISHED, null, targetFile);
 
                 String stopMsg = "Encoding STOPPED. Result file '" + targetFile.getAbsolutePath() + "'";
                 Application.LOGGER.log(System.Logger.Level.INFO, stopMsg);

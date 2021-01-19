@@ -5,6 +5,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -24,8 +25,9 @@ public class UserToFileStateTest {
     @Test
     public void testSetRandom() {
         UserToFileState state = new UserToFileState();
-        state.setFileName("foo.txt");
-        assertEquals("foo.txt", state.getFileName());
+        File testFile = new File("foo.txt");
+        state.setFileName(testFile);
+        assertEquals(testFile.getAbsolutePath(), state.getFileName());
     }
 
     @Test
@@ -58,7 +60,7 @@ public class UserToFileStateTest {
         assertDoesNotThrow(() -> user.updateUserDBData(provider));
 
         // Tests new state entre creation
-        String testFile = "test_file.test";
+        File testFile = new File("test_file.test");
         assertEquals(0, UserToFileState.getEntry(provider, testFile, user).size());
         final UserToFileState state = new UserToFileState(user, testFile);
         assertDoesNotThrow(() -> state.updateEntry(provider));
@@ -69,7 +71,7 @@ public class UserToFileStateTest {
         assertEquals(state.getPausedAt(), states.iterator().next().getPausedAt());
 
         // Tests entry edit
-        String newTestFile = "new_test_file.test";
+        File newTestFile = new File("new_test_file.test");
         state.setFileName(newTestFile);
         assertDoesNotThrow(() -> state.updateEntry(provider));
         states = UserToFileState.getEntry(provider, newTestFile, user);

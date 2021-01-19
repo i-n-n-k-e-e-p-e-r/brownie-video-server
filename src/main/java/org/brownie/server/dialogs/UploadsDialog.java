@@ -10,6 +10,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.upload.Upload;
 import org.brownie.server.Application;
+import org.brownie.server.db.User;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.events.IEventListener;
 import org.brownie.server.providers.BrownieMultiFileBuffer;
@@ -236,7 +237,7 @@ public class UploadsDialog extends Dialog implements IEventListener {
     }
 
     @Override
-    public boolean update(EventsManager.EVENT_TYPE eventType, Object... params) {
+    public boolean update(EventsManager.EVENT_TYPE eventType, User user, Object... params) {
         var ui = this.getUI().isPresent() ? this.getUI().get() : null;
         if (ui != null && !ui.isClosing()) {
             ui.access(() -> {

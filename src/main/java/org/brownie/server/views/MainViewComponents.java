@@ -16,15 +16,13 @@ import com.vaadin.flow.data.provider.SortDirection;
 import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
 import org.brownie.server.db.UserToFileState;
-import org.brownie.server.dialogs.PlayerDialog;
-import org.brownie.server.dialogs.SystemLoadDialog;
-import org.brownie.server.dialogs.UploadsDialog;
-import org.brownie.server.dialogs.UsersDialog;
+import org.brownie.server.dialogs.*;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.recoder.VideoDecoder;
 
+import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +33,7 @@ public class MainViewComponents {
         MenuBar menuBar = new MenuBar();
 
         MenuItem file = menuBar.addItem("File");
-        file.getSubMenu().addItem("Mark as unseen", e -> {
+        file.getSubMenu().addItem("Mark as not viewed", e -> {
             if (mainView.getFilesGrid() == null
                     || mainView.getFilesGrid().getSelectedItems().size() == 0) {
                 return;
@@ -43,11 +41,13 @@ public class MainViewComponents {
             mainView.getFilesGrid().getSelectedItems().forEach(f -> {
                 if (!f.isDirectory() && !isNotSupported(f)) {
                     List<UserToFileState> states = UserToFileState.getEntry(DBConnectionProvider.getInstance(),
-                            f.getName(),
+                            f,
                             mainView.getCurrentUser());
                     if (states != null && states.size() >= 1) {
                         states.iterator().next().deleteEntry(DBConnectionProvider.getInstance());
-                        EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE, f);
+                        EventsManager.getManager()
+                                .notifyAllListeners(EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE,
+                                        mainView.getCurrentUser(), f);
                     }
                 }
             });
@@ -57,6 +57,16 @@ public class MainViewComponents {
             file.addComponentAsFirst(VaadinIcon.CLIPBOARD_TEXT.create());
 
             file.getSubMenu().addItem("Uploads", e -> UploadsDialog.showUploadsDialog());
+
+            file.getSubMenu().addItem("New folder", e -> CreateFolderDialog.showDialog(mainView.getCurrentUser()));
+
+            file.getSubMenu().addItem("Rename", e -> {
+                if (mainView.getFilesGrid().getSelectedItems() != null
+                        && mainView.getFilesGrid().getSelectedItems().size() >= 1) {
+                    RenameFileDialog.showDialog(mainView.getFilesGrid().getSelectedItems().iterator().next(),
+                            mainView.getCurrentUser());
+                }
+            });
 
             file.getSubMenu().addItem("Delete", e -> {
                 if (mainView.getFilesGrid() == null
@@ -76,7 +86,9 @@ public class MainViewComponents {
                         mainView.getFilesGrid().getSelectedItems().forEach(
                                 FileSystemDataProvider::deleteFileOrDirectory);
                     }
-                    EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_DELETED, toDelete);
+                    EventsManager.getManager()
+                            .notifyAllListeners(EventsManager.EVENT_TYPE.FILE_DELETED,
+                                    mainView.getCurrentUser(), toDelete);
                     cd.close();
                 });
                 cd.addRejectListener(event -> cd.close());
@@ -101,12 +113,15 @@ public class MainViewComponents {
         return menuBar;
     }
 
-    protected static Icon getStatusIcon(User user, File file) {
+    protected static Component getStatusComponent(User user, File file) {
         if (file.isDirectory()) return null;
         if (isNotSupported(file)) return null;
 
-        if (!isFileWatched(user, file)) {
-            return VaadinIcon.EXCLAMATION_CIRCLE_O.create();
+        if (!isFileViewed(user, file)) {
+            Label component = new Label("*");
+            component.getStyle().set("font-weight", "bold");
+            component.getStyle().set("color", "red");
+            return component;
         }
 
         return null;
@@ -132,14 +147,14 @@ public class MainViewComponents {
         return VaadinIcon.FILE_O.create();
     }
 
-    public static TreeGrid<File> createFilesTreeGrid(MainView mainView) {
+    public static TreeGrid<File> createFilesTreeGrid(@NotNull MainView mainView) {
         TreeGrid<File> treeGrid = new TreeGrid<>();
 
         Grid.Column<?> fileNameColumn = treeGrid.addComponentHierarchyColumn(file -> {
-            Icon statusIcon = getStatusIcon(mainView.getCurrentUser(), file);
+            Component statusComponent = getStatusComponent(mainView.getCurrentUser(), file);
             HorizontalLayout value;
-            if (statusIcon != null) {
-                value = new HorizontalLayout(statusIcon,
+            if (statusComponent != null) {
+                value = new HorizontalLayout(statusComponent,
                         getIconForFile(file),
                         new Label(file.getName()));
             } else {
@@ -160,10 +175,12 @@ public class MainViewComponents {
         playColumn.setSortable(false);
 
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
-        if (mainView!= null && mainView.getCurrentUser().getGroup() == User.GROUP.USER.ordinal())
+        if (mainView != null && mainView.getCurrentUser().getGroup() == User.GROUP.USER.ordinal())
             treeGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
         final FileSystemDataProvider provider = new FileSystemDataProvider(treeGrid, MediaDirectories.mediaDirectory);
+        if (mainView != null) provider.setUser(mainView.getCurrentUser());
+
         // register for receiving updates from other UIs
         treeGrid.addAttachListener(listener -> EventsManager.getManager().registerListener(provider));
         treeGrid.addDetachListener(listener -> EventsManager.getManager().unregisterListener(provider));
@@ -175,9 +192,9 @@ public class MainViewComponents {
         return treeGrid;
     }
 
-    protected static boolean isFileWatched(User user, File file) {
+    protected static boolean isFileViewed(User user, File file) {
         return UserToFileState.getEntry(DBConnectionProvider.getInstance(),
-                file.getName(), user).size() != 0;
+                file, user).size() != 0;
     }
 
     private static Component getActionsLayout(MainView mainView, File file) {

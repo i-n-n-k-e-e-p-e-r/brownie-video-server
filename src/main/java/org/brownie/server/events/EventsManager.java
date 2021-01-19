@@ -1,6 +1,7 @@
 package org.brownie.server.events;
 
 import org.brownie.server.Application;
+import org.brownie.server.db.User;
 
 import javax.validation.constraints.NotNull;
 import java.util.*;
@@ -57,12 +58,12 @@ public class EventsManager {
         Application.LOGGER.log(System.Logger.Level.DEBUG, "Listener unregistered " + listener);
     }
 
-    public void notifyAllListeners(EVENT_TYPE eventType, Object... params) {
+    public void notifyAllListeners(EVENT_TYPE eventType, User user, Object... params) {
         Application.LOGGER.log(System.Logger.Level.DEBUG, "Notify all listeners");
         new Thread(() -> {
             synchronized (listeners) {
                 var results = listeners.computeIfAbsent(eventType, k -> Collections.synchronizedList(new ArrayList<>()))
-                        .parallelStream().map(listener -> listener.update(eventType, params))
+                        .parallelStream().map(listener -> listener.update(eventType, user, params))
                         .collect(Collectors.toList());
                 results.clear();
             }
