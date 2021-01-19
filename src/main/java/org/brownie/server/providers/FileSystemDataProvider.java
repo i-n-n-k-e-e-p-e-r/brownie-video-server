@@ -8,6 +8,8 @@ import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 import org.brownie.server.Application;
+import org.brownie.server.db.DBConnectionProvider;
+import org.brownie.server.db.UserToFileState;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.events.IEventListener;
 import org.brownie.server.recoder.VideoDecoder;
@@ -177,6 +179,7 @@ public class FileSystemDataProvider
 		Application.LOGGER.log(System.Logger.Level.DEBUG, "Updating FileSystemDataProvider " + this);
 
 		switch(eventType) {
+			case FILE_WATCHED_STATE_CHANGE:
 			case ENCODING_STARTED:
 			case ENCODING_FINISHED:
 			case FILE_RENAMED: {
@@ -225,6 +228,7 @@ public class FileSystemDataProvider
 		types.add(EventsManager.EVENT_TYPE.FILE_CREATED);
 		types.add(EventsManager.EVENT_TYPE.ENCODING_STARTED);
 		types.add(EventsManager.EVENT_TYPE.ENCODING_FINISHED);
+		types.add(EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE);
 
 		return types;
 	}
@@ -420,13 +424,7 @@ public class FileSystemDataProvider
 		if (fileForDelete.isDirectory()) {
 			List.of(Objects.requireNonNull(fileForDelete.listFiles())).forEach(childFile -> {
 				if (childFile.exists() && !VideoDecoder.getDecoder().isEncoding(childFile)) {
-					if (childFile.delete()) {
-						Application.LOGGER.log(System.Logger.Level.INFO,
-								"Deleted '" + childFile.getAbsolutePath() + "'");
-					} else {
-						Application.LOGGER.log(System.Logger.Level.ERROR,
-								"Can't delete '" + childFile.getAbsolutePath() + "'");
-					}
+					deleteFile(childFile);
 				}
 			});
 
@@ -442,13 +440,21 @@ public class FileSystemDataProvider
 				}
 			}
 		} else {
-			if (fileForDelete.delete()) {
-				Application.LOGGER.log(System.Logger.Level.INFO,
-						"Deleted '" + fileForDelete.getAbsolutePath() + "'");
-			} else {
-				Application.LOGGER.log(System.Logger.Level.ERROR,
-						"Can't delete '" + fileForDelete.getAbsolutePath() + "'");
-			}
+			deleteFile(fileForDelete);
+		}
+	}
+
+	public static void deleteFile(File fileForDelete) {
+		UserToFileState.getEntriesForFile(DBConnectionProvider.getInstance(),
+				fileForDelete.getName())
+				.forEach(entry -> entry.deleteEntry(DBConnectionProvider.getInstance()));
+
+		if (fileForDelete.delete()) {
+			Application.LOGGER.log(System.Logger.Level.INFO,
+					"Deleted '" + fileForDelete.getAbsolutePath() + "'");
+		} else {
+			Application.LOGGER.log(System.Logger.Level.ERROR,
+					"Can't delete '" + fileForDelete.getAbsolutePath() + "'");
 		}
 	}
 

@@ -13,7 +13,9 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.SortDirection;
+import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
+import org.brownie.server.db.UserToFileState;
 import org.brownie.server.dialogs.PlayerDialog;
 import org.brownie.server.dialogs.SystemLoadDialog;
 import org.brownie.server.dialogs.UploadsDialog;
@@ -24,10 +26,8 @@ import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.recoder.VideoDecoder;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 public class MainViewComponents {
     public static MenuBar createMenuBar(MainView mainView) {
@@ -82,7 +82,18 @@ public class MainViewComponents {
         return menuBar;
     }
 
-    private static Icon getIconForFile(File file) {
+    protected static Icon getStatusIcon(User user, File file) {
+        if (file.isDirectory()) return null;
+        if (isNotSupported(file)) return null;
+
+        if (!isFileWatched(user, file)) {
+            return VaadinIcon.EXCLAMATION_CIRCLE_O.create();
+        }
+
+        return null;
+    }
+
+    protected static Icon getIconForFile(File file) {
         if (file.isDirectory()) {
             return VaadinIcon.RECORDS.create();
         }
@@ -106,7 +117,16 @@ public class MainViewComponents {
         TreeGrid<File> treeGrid = new TreeGrid<>();
 
         Grid.Column<?> fileNameColumn = treeGrid.addComponentHierarchyColumn(file -> {
-            HorizontalLayout value = new HorizontalLayout(getIconForFile(file), new Label(file.getName()));
+            Icon statusIcon = getStatusIcon(mainView.getCurrentUser(), file);
+            HorizontalLayout value;
+            if (statusIcon != null) {
+                value = new HorizontalLayout(statusIcon,
+                        getIconForFile(file),
+                        new Label(file.getName()));
+            } else {
+                value = new HorizontalLayout(getIconForFile(file),
+                        new Label(file.getName()));
+            }
             value.setPadding(false);
             value.setSpacing(true);
 
@@ -134,6 +154,11 @@ public class MainViewComponents {
                 SortDirection.ASCENDING)));
 
         return treeGrid;
+    }
+
+    protected static boolean isFileWatched(User user, File file) {
+        return UserToFileState.getEntry(DBConnectionProvider.getInstance(),
+                file.getName(), user).size() != 0;
     }
 
     private static Component getActionsLayout(MainView mainView, File file) {

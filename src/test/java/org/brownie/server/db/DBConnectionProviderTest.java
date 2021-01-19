@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 
 public class DBConnectionProviderTest {
-    private static final String DB_FILE_NAME = "testBrownieDB.db";
+    public static final String DB_FILE_NAME = "testBrownieDB.db";
     private static DBConnectionProvider provider;
 
     @BeforeAll

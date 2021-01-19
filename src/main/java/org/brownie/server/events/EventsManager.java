@@ -16,7 +16,8 @@ public class EventsManager {
         ENCODING_STARTED,
         ENCODING_FINISHED,
         PLAYER_OPENED,
-        PLAYER_CLOSED
+        PLAYER_CLOSED,
+        FILE_WATCHED_STATE_CHANGE
     }
 
     private static final Map<EVENT_TYPE, List<IEventListener>> listeners = Collections.synchronizedMap(new HashMap<>());

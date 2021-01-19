@@ -141,6 +141,11 @@ public class FileSystemDataProviderTest {
                 new FileSystemDataProvider(MainViewComponents.createFilesTreeGrid(null), root);
 
         assertDoesNotThrow(() -> provider.processEvent(null,
+                EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE,
+                provider.getAllGridItems(),
+                Arrays.stream(Objects.requireNonNull(root.listFiles())).iterator().next()));
+
+        assertDoesNotThrow(() -> provider.processEvent(null,
                 EventsManager.EVENT_TYPE.FILE_CREATED,
                 provider.getAllGridItems(),
                 Arrays.stream(Objects.requireNonNull(root.listFiles())).iterator().next()));
@@ -174,13 +179,14 @@ public class FileSystemDataProviderTest {
     public void testGetEventTypes() {
         List<EventsManager.EVENT_TYPE> actualEventTypes = (new FileSystemDataProvider(new TreeGrid<>(), root))
                 .getEventTypes();
-        assertEquals(6, actualEventTypes.size());
+        assertEquals(7, actualEventTypes.size());
         assertEquals(EventsManager.EVENT_TYPE.FILE_MOVED, actualEventTypes.get(0));
         assertEquals(EventsManager.EVENT_TYPE.FILE_RENAMED, actualEventTypes.get(1));
         assertEquals(EventsManager.EVENT_TYPE.FILE_DELETED, actualEventTypes.get(2));
         assertEquals(EventsManager.EVENT_TYPE.FILE_CREATED, actualEventTypes.get(3));
         assertEquals(EventsManager.EVENT_TYPE.ENCODING_STARTED, actualEventTypes.get(4));
         assertEquals(EventsManager.EVENT_TYPE.ENCODING_FINISHED, actualEventTypes.get(5));
+        assertEquals(EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE, actualEventTypes.get(6));
     }
 
     @Test
