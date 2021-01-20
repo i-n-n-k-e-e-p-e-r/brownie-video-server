@@ -2,6 +2,7 @@ package org.brownie.server.providers;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.SortOrderProvider;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -216,7 +217,18 @@ public class FileSystemDataProvider
 	protected boolean updateAllRows(UI ui) {
 		if (ui != null && !ui.isClosing()) {
 			ui.access(() -> {
-				if (!ui.isClosing()) this.refreshAll();
+				Set<File> selected = grid.getSelectedItems();
+				if (!ui.isClosing()) {
+					grid.deselectAll();
+					this.refreshAll();
+					if (selected != null) {
+						LinkedList<File> currentGridItems = getAllGridItems();
+						selected.stream()
+								.filter(currentGridItems::contains)
+								.collect(Collectors.toList())
+								.forEach(grid::select);
+					}
+				}
 			});
 		}
 
@@ -447,7 +459,16 @@ public class FileSystemDataProvider
 		boolean result;
 
 		try {
-			result = newFile.createNewFile();
+			synchronized (MediaDirectories.class) {
+				if (!newFile.toPath().getParent().toFile().exists()) {
+					if (!newFile.toPath().getParent().toFile().mkdirs()) {
+						Application.LOGGER.log(System.Logger.Level.ERROR,
+								"Can't create sub folder in uploads '" + newFile.toPath().getParent().toFile().getName() + "'");
+					}
+				}
+				result = newFile.createNewFile();
+			}
+
 			if (!result) {
 				Application.LOGGER.log(System.Logger.Level.ERROR,
 						"Can't create new file '" + newFile.getAbsolutePath() + "'");
@@ -489,6 +510,10 @@ public class FileSystemDataProvider
 				}
 			}
 		} else {
+			if (VideoDecoder.getDecoder().isEncoding(fileForDelete)) {
+				Notification.show("File encoding. Please, try again later!");
+				return;
+			}
 			deleteFile(fileForDelete);
 		}
 	}
