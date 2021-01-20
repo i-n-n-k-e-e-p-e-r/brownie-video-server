@@ -2,12 +2,16 @@ package org.brownie.server.providers;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.SortOrderProvider;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 import org.brownie.server.Application;
+import org.brownie.server.db.DBConnectionProvider;
+import org.brownie.server.db.User;
+import org.brownie.server.db.UserToFileState;
 import org.brownie.server.events.EventsManager;
 import org.brownie.server.events.IEventListener;
 import org.brownie.server.recoder.VideoDecoder;
@@ -37,6 +41,7 @@ public class FileSystemDataProvider
 	public static final String TEMP_UPLOADED_FILE_PREFIX = "brownie_upload_tmpfile_";
 	private final File root;
 	private final TreeGrid<File> grid;
+	private User user = null;
 
 	private static final Comparator<File> fileComparator = (fileA, fileB) -> {
 		if ((!fileA.isDirectory() && !fileB.isDirectory()) || (fileA.isDirectory() && fileB.isDirectory())) {
@@ -53,6 +58,14 @@ public class FileSystemDataProvider
 	public FileSystemDataProvider(TreeGrid<File> grid, File root) {
 		this.grid = grid;
 		this.root = root;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
+	}
+
+	public User getUser() {
+		return this.user;
 	}
 
 	private static Set<String> getVideoFormats() {
@@ -144,8 +157,9 @@ public class FileSystemDataProvider
 	}
 
 	@Override
-	public boolean update(EventsManager.EVENT_TYPE eventType, Object... params) {
+	public boolean update(EventsManager.EVENT_TYPE eventType, User user, Object... params) {
 		return processEvent(grid.getUI().isPresent() ? grid.getUI().get() : null,
+				user,
 				eventType,
 				getAllGridItems(),
 				params);
@@ -171,41 +185,26 @@ public class FileSystemDataProvider
 		return gridItems;
 	}
 
-	protected boolean processEvent(UI ui, EventsManager.EVENT_TYPE eventType, List<File> gridItems, Object... params) {
+	protected boolean processEvent(UI ui, User user, EventsManager.EVENT_TYPE eventType, List<File> gridItems, Object... params) {
 		boolean result = false;
 
 		Application.LOGGER.log(System.Logger.Level.DEBUG, "Updating FileSystemDataProvider " + this);
 
 		switch(eventType) {
+			case FILE_WATCHED_STATE_CHANGE:
 			case ENCODING_STARTED:
-			case ENCODING_FINISHED:
-			case FILE_RENAMED: {
-				Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
-				if (gridItems == null) break;
-
-				for (var f : gridItems) {
-					for (var o : forUpdate) {
-						if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
-							result = true;
-
-							if (ui != null && !ui.isClosing()) ui.access(() -> { if (!ui.isClosing()) refreshItem(f); });
-							break;
-						}
-					}
-				}
-
+			case ENCODING_FINISHED: {
+				result = updateSingleRow(ui, gridItems, params);
 				break;
 			}
 			case FILE_CREATED:
 			case FILE_DELETED:
 			case FILE_MOVED: {
-				result = true;
-
-				if (ui != null && !ui.isClosing()) {
-					ui.access(() -> {
-						if (!ui.isClosing()) this.refreshAll();
-					});
-				}
+				result = updateAllRows(ui);
+				break;
+			}
+			case FILE_RENAMED: {
+				result = updateAllRowsWithRestoreSelectionForUser(ui, user, gridItems, params);
 				break;
 			}
 
@@ -213,6 +212,71 @@ public class FileSystemDataProvider
 		}
 
 		return result;
+	}
+
+	protected boolean updateAllRows(UI ui) {
+		if (ui != null && !ui.isClosing()) {
+			ui.access(() -> {
+				Set<File> selected = grid.getSelectedItems();
+				if (!ui.isClosing()) {
+					grid.deselectAll();
+					this.refreshAll();
+					if (selected != null) {
+						LinkedList<File> currentGridItems = getAllGridItems();
+						selected.stream()
+								.filter(currentGridItems::contains)
+								.collect(Collectors.toList())
+								.forEach(grid::select);
+					}
+				}
+			});
+		}
+
+		return true;
+	}
+
+	protected boolean updateAllRowsWithRestoreSelectionForUser(UI ui, User user, List<File> gridItems, Object... params) {
+		if (ui != null && !ui.isClosing()) {
+			ui.access(() -> {
+				if (!ui.isClosing()) {
+					this.refreshAll();
+				}
+				if (gridItems == null) return;
+				Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
+				for (var f : gridItems) {
+					for (var o : forUpdate) {
+						if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
+							if (!ui.isClosing()
+									&& getUser() != null
+									&& user != null
+									&& user.getUserId().equals(getUser().getUserId())) {
+								grid.deselectAll();
+								grid.select(f);
+							}
+							break;
+						}
+					}
+				}
+			});
+		}
+
+		return true;
+	}
+
+	protected boolean updateSingleRow(UI ui, List<File> gridItems, Object... params) {
+		if (gridItems == null) return true;
+
+		Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
+		for (var f : gridItems) {
+			for (var o : forUpdate) {
+				if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
+					if (ui != null && !ui.isClosing())
+						ui.access(() -> { if (!ui.isClosing()) refreshItem(f); });
+					break;
+				}
+			}
+		}
+		return true;
 	}
 
 	@Override
@@ -225,6 +289,7 @@ public class FileSystemDataProvider
 		types.add(EventsManager.EVENT_TYPE.FILE_CREATED);
 		types.add(EventsManager.EVENT_TYPE.ENCODING_STARTED);
 		types.add(EventsManager.EVENT_TYPE.ENCODING_FINISHED);
+		types.add(EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE);
 
 		return types;
 	}
@@ -364,10 +429,10 @@ public class FileSystemDataProvider
 			}
 
 			if (folderName.trim().length() > 0) {
-				MediaDirectories.clearUploadsSubFolder(folderName.trim());
+				MediaDirectories.deleteUploadsSubFolder(folderName.trim());
 			}
 
-			EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED);
+			EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_CREATED, null);
 		}
 	}
 
@@ -394,7 +459,16 @@ public class FileSystemDataProvider
 		boolean result;
 
 		try {
-			result = newFile.createNewFile();
+			synchronized (MediaDirectories.class) {
+				if (!newFile.toPath().getParent().toFile().exists()) {
+					if (!newFile.toPath().getParent().toFile().mkdirs()) {
+						Application.LOGGER.log(System.Logger.Level.ERROR,
+								"Can't create sub folder in uploads '" + newFile.toPath().getParent().toFile().getName() + "'");
+					}
+				}
+				result = newFile.createNewFile();
+			}
+
 			if (!result) {
 				Application.LOGGER.log(System.Logger.Level.ERROR,
 						"Can't create new file '" + newFile.getAbsolutePath() + "'");
@@ -420,13 +494,7 @@ public class FileSystemDataProvider
 		if (fileForDelete.isDirectory()) {
 			List.of(Objects.requireNonNull(fileForDelete.listFiles())).forEach(childFile -> {
 				if (childFile.exists() && !VideoDecoder.getDecoder().isEncoding(childFile)) {
-					if (childFile.delete()) {
-						Application.LOGGER.log(System.Logger.Level.INFO,
-								"Deleted '" + childFile.getAbsolutePath() + "'");
-					} else {
-						Application.LOGGER.log(System.Logger.Level.ERROR,
-								"Can't delete '" + childFile.getAbsolutePath() + "'");
-					}
+					deleteFile(childFile);
 				}
 			});
 
@@ -442,13 +510,25 @@ public class FileSystemDataProvider
 				}
 			}
 		} else {
-			if (fileForDelete.delete()) {
-				Application.LOGGER.log(System.Logger.Level.INFO,
-						"Deleted '" + fileForDelete.getAbsolutePath() + "'");
-			} else {
-				Application.LOGGER.log(System.Logger.Level.ERROR,
-						"Can't delete '" + fileForDelete.getAbsolutePath() + "'");
+			if (VideoDecoder.getDecoder().isEncoding(fileForDelete)) {
+				Notification.show("File encoding. Please, try again later!");
+				return;
 			}
+			deleteFile(fileForDelete);
+		}
+	}
+
+	public static void deleteFile(File fileForDelete) {
+		UserToFileState.getEntriesForFile(DBConnectionProvider.getInstance(),
+				fileForDelete)
+				.forEach(entry -> entry.deleteEntry(DBConnectionProvider.getInstance()));
+
+		if (fileForDelete.delete()) {
+			Application.LOGGER.log(System.Logger.Level.INFO,
+					"Deleted '" + fileForDelete.getAbsolutePath() + "'");
+		} else {
+			Application.LOGGER.log(System.Logger.Level.ERROR,
+					"Can't delete '" + fileForDelete.getAbsolutePath() + "'");
 		}
 	}
 

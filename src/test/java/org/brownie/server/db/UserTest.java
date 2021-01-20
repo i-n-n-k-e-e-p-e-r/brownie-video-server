@@ -8,13 +8,14 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UserTest {
-    private static final String DB_FILE_NAME = "testBrownieDB.db";
     private static DBConnectionProvider provider;
 
     @BeforeAll
     @Test
     static void setup() {
-        assertDoesNotThrow(() -> { provider = new DBConnectionProvider(DB_FILE_NAME); });
+        assertDoesNotThrow(() -> {
+            provider = new DBConnectionProvider(DBConnectionProviderTest.DB_FILE_NAME);
+        });
     }
 
     @Test
@@ -80,4 +81,3 @@ public class UserTest {
         assertFalse(provider.getDbFile().exists());
     }
 }
-

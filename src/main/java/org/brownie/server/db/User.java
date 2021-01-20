@@ -97,6 +97,9 @@ public class User {
     @SuppressWarnings("unchecked")
 	public void deleteUserFromDB(DBConnectionProvider provider) {
     	try {
+            UserToFileState.getEntriesForUser(provider, this)
+                    .forEach(entry -> entry.deleteEntry(provider));
+
 			((Dao<User, Integer>)provider.getOrmDaos()
 					.get(User.class)).delete(this);
 		} catch (SQLException e) {

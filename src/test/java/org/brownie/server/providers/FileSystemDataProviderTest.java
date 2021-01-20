@@ -121,7 +121,7 @@ public class FileSystemDataProviderTest {
     @Test
     public void testGetAllGridItems() {
         if (!MediaDirectories.mediaDirectory.exists())
-            assertDoesNotThrow(() -> MediaDirectories.mediaDirectory.mkdirs());
+            assertDoesNotThrow(MediaDirectories.mediaDirectory::mkdirs);
         File testFile = Paths.get(MediaDirectories.mediaDirectory.getAbsolutePath(),
                 "test_getALLGridItems.test").toFile();
         if (!testFile.exists())
@@ -140,32 +140,37 @@ public class FileSystemDataProviderTest {
         FileSystemDataProvider provider =
                 new FileSystemDataProvider(MainViewComponents.createFilesTreeGrid(null), root);
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
+                EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE,
+                provider.getAllGridItems(),
+                Arrays.stream(Objects.requireNonNull(root.listFiles())).iterator().next()));
+
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.FILE_CREATED,
                 provider.getAllGridItems(),
                 Arrays.stream(Objects.requireNonNull(root.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.FILE_CREATED,
                 provider.getAllGridItems(),
                 Arrays.stream(Objects.requireNonNull(folder1.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.ENCODING_FINISHED,
                 provider.getAllGridItems(),
                 Arrays.stream(Objects.requireNonNull(root.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.ENCODING_FINISHED,
                 provider.getAllGridItems(),
                 Arrays.stream(Objects.requireNonNull(folder1.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.FILE_CREATED,
                 null,
                 Arrays.stream(Objects.requireNonNull(root.listFiles())).iterator().next()));
 
-        assertDoesNotThrow(() -> provider.processEvent(null,
+        assertDoesNotThrow(() -> provider.processEvent(null, null,
                 EventsManager.EVENT_TYPE.FILE_CREATED,
                 null));
     }
@@ -174,13 +179,14 @@ public class FileSystemDataProviderTest {
     public void testGetEventTypes() {
         List<EventsManager.EVENT_TYPE> actualEventTypes = (new FileSystemDataProvider(new TreeGrid<>(), root))
                 .getEventTypes();
-        assertEquals(6, actualEventTypes.size());
+        assertEquals(7, actualEventTypes.size());
         assertEquals(EventsManager.EVENT_TYPE.FILE_MOVED, actualEventTypes.get(0));
         assertEquals(EventsManager.EVENT_TYPE.FILE_RENAMED, actualEventTypes.get(1));
         assertEquals(EventsManager.EVENT_TYPE.FILE_DELETED, actualEventTypes.get(2));
         assertEquals(EventsManager.EVENT_TYPE.FILE_CREATED, actualEventTypes.get(3));
         assertEquals(EventsManager.EVENT_TYPE.ENCODING_STARTED, actualEventTypes.get(4));
         assertEquals(EventsManager.EVENT_TYPE.ENCODING_FINISHED, actualEventTypes.get(5));
+        assertEquals(EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE, actualEventTypes.get(6));
     }
 
     @Test
@@ -274,9 +280,9 @@ public class FileSystemDataProviderTest {
     @Test
     public void testCopyUploadedFile() {
         if (!MediaDirectories.mediaDirectory.exists())
-            assertDoesNotThrow(() -> MediaDirectories.mediaDirectory.mkdirs());
+            assertDoesNotThrow(MediaDirectories.mediaDirectory::mkdirs);
         if (!MediaDirectories.uploadsDirectory.exists())
-            assertDoesNotThrow(() -> MediaDirectories.uploadsDirectory.mkdirs());
+            assertDoesNotThrow(MediaDirectories.uploadsDirectory::mkdirs);
 
         File subFolderInUploads = Paths.get(MediaDirectories.uploadsDirectory.getAbsolutePath(),
                 "unit_tests_folder").toFile();
@@ -305,8 +311,8 @@ public class FileSystemDataProviderTest {
                 subFolderInUploads.getName(), fileInUploads.getName()).toFile().delete());
         assertDoesNotThrow(() -> Paths.get(MediaDirectories.mediaDirectory.getAbsolutePath(),
                 subFolderInUploads.getName()).toFile().delete());
-        assertDoesNotThrow(() -> MediaDirectories.mediaDirectory.delete());
-        assertDoesNotThrow(() -> MediaDirectories.uploadsDirectory.delete());
+        assertDoesNotThrow(MediaDirectories.mediaDirectory::delete);
+        assertDoesNotThrow(MediaDirectories.uploadsDirectory::delete);
     }
 
     @Test

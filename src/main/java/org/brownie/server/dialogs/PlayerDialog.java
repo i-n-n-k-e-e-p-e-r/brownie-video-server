@@ -17,6 +17,9 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.server.StreamResource;
 import org.brownie.server.Application;
+import org.brownie.server.db.DBConnectionProvider;
+import org.brownie.server.db.UserToFileState;
+import org.brownie.server.events.EventsManager;
 import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.views.CommonComponents;
 import org.brownie.server.views.MainView;
@@ -24,6 +27,7 @@ import org.brownie.server.views.MainView;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.SQLException;
 
 public class PlayerDialog extends Dialog {
 
@@ -48,6 +52,23 @@ public class PlayerDialog extends Dialog {
 		setResizable(false);
 
 		AppLayout mainLayout = new AppLayout();
+		mainLayout.addAttachListener(event -> {
+			// TODO more smart control for (new/watched states)
+			UserToFileState state = new UserToFileState(mainView.getCurrentUser(), media);
+			try {
+				if (UserToFileState.getEntry(DBConnectionProvider.getInstance(),
+						media,
+						mainView.getCurrentUser()).size() == 0) {
+					state.updateEntry(DBConnectionProvider.getInstance());
+
+					EventsManager.getManager()
+							.notifyAllListeners(EventsManager.EVENT_TYPE.FILE_WATCHED_STATE_CHANGE,
+									mainView.getCurrentUser(), media);
+				}
+			} catch (SQLException e) {
+				// It's OK (file probably watched)
+			}
+		});
 
 		addOpenedChangeListener(e -> {
 			this.mainView.getFilesGrid().deselectAll();

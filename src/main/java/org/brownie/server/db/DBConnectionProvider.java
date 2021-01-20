@@ -100,9 +100,11 @@ public class DBConnectionProvider {
         
         // TODO instantiate daos all tables
         getOrmDaos().put(User.class, DaoManager.createDao(connectionSource, User.class));
+		getOrmDaos().put(UserToFileState.class, DaoManager.createDao(connectionSource, UserToFileState.class));
 
         // TODO init all tables
-        return TableUtils.createTableIfNotExists(connectionSource, User.class);
+        return TableUtils.createTableIfNotExists(connectionSource, User.class) +
+				TableUtils.createTableIfNotExists(connectionSource, UserToFileState.class);
 	}
 	
 	public ConnectionSource getConnectionSource() {
