@@ -51,30 +51,7 @@ public class RenameFileDialog extends Dialog {
         Button createButton = CommonComponents.createButton("Rename",
                 VaadinIcon.CHECK_CIRCLE_O.create(),
                 e -> {
-                    if (newNameField.getValue() == null) return;
-                    if (newNameField.getValue().trim().length() == 0) return;
-                    if (getFileToRename().isDirectory()) {
-                        if (Arrays.stream(Objects.requireNonNull(getFileToRename().getParentFile().listFiles()))
-                                .anyMatch(f -> f.getName().equals(newNameField.getValue()) && f.isDirectory())) {
-                            Notification.show("Folder already exists!");
-                            return;
-                        }
-                        if (Arrays.stream(Objects.requireNonNull(getFileToRename().listFiles()))
-                                .anyMatch(f -> VideoDecoder.getDecoder().isEncoding(f))) {
-                            Notification.show("Folder has encoding files. Please, try again later!");
-                            return;
-                        }
-                    } else {
-                        if (VideoDecoder.getDecoder().isEncoding(getFileToRename())) {
-                            Notification.show("File encoding. Please, try again later!");
-                            return;
-                        }
-                        if (Arrays.stream(Objects.requireNonNull(getFileToRename().getParentFile().listFiles()))
-                                .anyMatch(f -> f.getName().equals(newNameField.getValue()) && !f.isDirectory())) {
-                            Notification.show("File already exists!");
-                            return;
-                        }
-                    }
+                    if (!isInputValid(newNameField)) return;
 
                     File renamedFile = rename(getFileToRename(), newNameField.getValue().trim());
                     if (renamedFile != null) {
@@ -84,6 +61,7 @@ public class RenameFileDialog extends Dialog {
                         EventsManager.getManager().notifyAllListeners(EventsManager.EVENT_TYPE.FILE_RENAMED,
                                 user, renamedFile);
 
+                        // Renamed file is new for viewed status
                         UserToFileState.getEntry(DBConnectionProvider.getInstance(), getFileToRename(), user)
                                 .forEach(state -> state.deleteEntry(DBConnectionProvider.getInstance()));
                     } else {
@@ -106,6 +84,35 @@ public class RenameFileDialog extends Dialog {
         mainLayout.add(title, newNameField, buttonsLayout);
 
         add(mainLayout);
+    }
+
+    protected boolean isInputValid(TextField newNameField) {
+        if (newNameField.getValue() == null) return false;
+        if (newNameField.getValue().trim().length() == 0) return false;
+        if (getFileToRename().isDirectory()) {
+            if (Arrays.stream(Objects.requireNonNull(getFileToRename().getParentFile().listFiles()))
+                    .anyMatch(f -> f.getName().equals(newNameField.getValue()) && f.isDirectory())) {
+                Notification.show("Folder already exists!");
+                return false;
+            }
+            if (Arrays.stream(Objects.requireNonNull(getFileToRename().listFiles()))
+                    .anyMatch(f -> VideoDecoder.getDecoder().isEncoding(f))) {
+                Notification.show("Folder has encoding files. Please, try again later!");
+                return false;
+            }
+        } else {
+            if (VideoDecoder.getDecoder().isEncoding(getFileToRename())) {
+                Notification.show("File encoding. Please, try again later!");
+                return false;
+            }
+            if (Arrays.stream(Objects.requireNonNull(getFileToRename().getParentFile().listFiles()))
+                    .anyMatch(f -> f.getName().equals(newNameField.getValue()) && !f.isDirectory())) {
+                Notification.show("File already exists!");
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected File rename(File file, String newName) {

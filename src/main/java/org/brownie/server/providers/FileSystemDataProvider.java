@@ -193,62 +193,17 @@ public class FileSystemDataProvider
 			case FILE_WATCHED_STATE_CHANGE:
 			case ENCODING_STARTED:
 			case ENCODING_FINISHED: {
-				Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
-				if (gridItems == null) break;
-
-				for (var f : gridItems) {
-					for (var o : forUpdate) {
-						if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
-							result = true;
-
-							if (ui != null && !ui.isClosing()) ui.access(() -> { if (!ui.isClosing()) refreshItem(f); });
-							break;
-						}
-					}
-				}
-
+				result = updateSingleRow(ui, gridItems, params);
 				break;
 			}
 			case FILE_CREATED:
 			case FILE_DELETED:
 			case FILE_MOVED: {
-				result = true;
-
-				if (ui != null && !ui.isClosing()) {
-					ui.access(() -> {
-						if (!ui.isClosing()) this.refreshAll();
-					});
-				}
+				result = updateAllRows(ui);
 				break;
 			}
 			case FILE_RENAMED: {
-				result = true;
-
-				if (ui != null && !ui.isClosing()) {
-					ui.access(() -> {
-						if (!ui.isClosing()) {
-							this.refreshAll();
-						}
-
-						Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
-						if (gridItems == null) return;
-
-						for (var f : gridItems) {
-							for (var o : forUpdate) {
-								if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
-									if (!ui.isClosing()
-											&& getUser() != null
-											&& user != null
-											&& user.getUserId().equals(getUser().getUserId())) {
-										grid.deselectAll();
-										grid.select(f);
-									}
-									break;
-								}
-							}
-						}
-					});
-				}
+				result = updateAllRowsWithRestoreSelectionForUser(ui, user, gridItems, params);
 				break;
 			}
 
@@ -256,6 +211,60 @@ public class FileSystemDataProvider
 		}
 
 		return result;
+	}
+
+	protected boolean updateAllRows(UI ui) {
+		if (ui != null && !ui.isClosing()) {
+			ui.access(() -> {
+				if (!ui.isClosing()) this.refreshAll();
+			});
+		}
+
+		return true;
+	}
+
+	protected boolean updateAllRowsWithRestoreSelectionForUser(UI ui, User user, List<File> gridItems, Object... params) {
+		if (ui != null && !ui.isClosing()) {
+			ui.access(() -> {
+				if (!ui.isClosing()) {
+					this.refreshAll();
+				}
+				if (gridItems == null) return;
+				Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
+				for (var f : gridItems) {
+					for (var o : forUpdate) {
+						if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
+							if (!ui.isClosing()
+									&& getUser() != null
+									&& user != null
+									&& user.getUserId().equals(getUser().getUserId())) {
+								grid.deselectAll();
+								grid.select(f);
+							}
+							break;
+						}
+					}
+				}
+			});
+		}
+
+		return true;
+	}
+
+	protected boolean updateSingleRow(UI ui, List<File> gridItems, Object... params) {
+		if (gridItems == null) return true;
+
+		Set<?> forUpdate = Arrays.stream(params).collect(Collectors.toSet());
+		for (var f : gridItems) {
+			for (var o : forUpdate) {
+				if (((File)o).getAbsolutePath().equals(f.getAbsolutePath())) {
+					if (ui != null && !ui.isClosing())
+						ui.access(() -> { if (!ui.isClosing()) refreshItem(f); });
+					break;
+				}
+			}
+		}
+		return true;
 	}
 
 	@Override

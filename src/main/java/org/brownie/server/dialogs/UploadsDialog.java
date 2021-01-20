@@ -62,21 +62,19 @@ public class UploadsDialog extends Dialog implements IEventListener {
         folders.setItems(MediaDirectories.getFoldersInMedia());
         folders.setAllowCustomValue(true);
         folders.setPlaceholder("Type the name or choose");
-        folders.addCustomValueSetListener(event -> {
-            new Thread(() -> {
-                List<String> newValues = MediaDirectories.getFoldersInMedia();
-                newValues.add(event.getDetail());
+        folders.addCustomValueSetListener(event -> new Thread(() -> {
+            List<String> newValues = MediaDirectories.getFoldersInMedia();
+            newValues.add(event.getDetail());
 
-                var ui = mainLayout.getUI().isPresent() ? mainLayout.getUI().get() : null;
-                if (ui != null && !ui.isClosing()) {
-                    ui.access(() -> {
-                        if (ui.isClosing()) return;
-                        folders.setItems(newValues);
-                        folders.setValue(event.getDetail());
-                    });
-                }
-            }).start();
-        });
+            var ui = mainLayout.getUI().isPresent() ? mainLayout.getUI().get() : null;
+            if (ui != null && !ui.isClosing()) {
+                ui.access(() -> {
+                    if (ui.isClosing()) return;
+                    folders.setItems(newValues);
+                    folders.setValue(event.getDetail());
+                });
+            }
+        }).start());
         folders.setValue("");
 
         updateDiscCapacity();
@@ -84,7 +82,6 @@ public class UploadsDialog extends Dialog implements IEventListener {
         mainLayout.add(title, discCapacity, folders, convertVideo);
 
         add(mainLayout);
-        EventsManager.getManager().registerListener(this);
 
         setCloseOnEsc(true);
         setCloseOnOutsideClick(false);
@@ -95,6 +92,8 @@ public class UploadsDialog extends Dialog implements IEventListener {
 
         this.addOpenedChangeListener(event -> {
             if (event.isOpened()) {
+                EventsManager.getManager().registerListener(this);
+
                 BrownieUploadsFileFactory tempFilesFactory = new BrownieUploadsFileFactory();
                 BrownieMultiFileBuffer multiFileBuffer = new BrownieMultiFileBuffer(tempFilesFactory);
 
@@ -124,6 +123,8 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 mainLayout.remove(upload);
                 mainLayout.remove(closeButton);
                 upload = null;
+
+                EventsManager.getManager().unregisterListener(this);
             }
         });
     }

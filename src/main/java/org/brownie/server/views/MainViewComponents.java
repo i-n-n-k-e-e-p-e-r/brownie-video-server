@@ -33,6 +33,8 @@ public class MainViewComponents {
         MenuBar menuBar = new MenuBar();
 
         MenuItem file = menuBar.addItem("File");
+        file.addComponentAsFirst(VaadinIcon.CLIPBOARD_TEXT.create());
+
         file.getSubMenu().addItem("Mark as not viewed", e -> {
             if (mainView.getFilesGrid() == null
                     || mainView.getFilesGrid().getSelectedItems().size() == 0) {
@@ -54,10 +56,6 @@ public class MainViewComponents {
         });
 
         if (mainView.getCurrentUser().getGroup() == User.GROUP.ADMIN.ordinal()) {
-            file.addComponentAsFirst(VaadinIcon.CLIPBOARD_TEXT.create());
-
-            file.getSubMenu().addItem("Uploads", e -> UploadsDialog.showUploadsDialog());
-
             file.getSubMenu().addItem("New folder", e -> CreateFolderDialog.showDialog(mainView.getCurrentUser()));
 
             file.getSubMenu().addItem("Rename", e -> {
@@ -67,6 +65,9 @@ public class MainViewComponents {
                             mainView.getCurrentUser());
                 }
             });
+
+            file.getSubMenu().addItem("Move", e ->
+                    MoveFileDialog.showDialog(mainView.getFilesGrid().getSelectedItems(), mainView.getCurrentUser()));
 
             file.getSubMenu().addItem("Delete", e -> {
                 if (mainView.getFilesGrid() == null
@@ -95,6 +96,9 @@ public class MainViewComponents {
                 cd.open();
             });
 
+            MenuItem uploads = menuBar.addItem("Uploads", e -> UploadsDialog.showUploadsDialog());
+            uploads.addComponentAsFirst(VaadinIcon.UPLOAD.create());
+
             MenuItem users = menuBar.addItem("Users", e -> {
                 UsersDialog usersDialog = new UsersDialog();
                 usersDialog.open();
@@ -102,7 +106,7 @@ public class MainViewComponents {
             users.addComponentAsFirst(VaadinIcon.GROUP.create());
         }
 
-        MenuItem systemInformation = menuBar.addItem("System information",
+        MenuItem systemInformation = menuBar.addItem("About",
                 e -> SystemLoadDialog.showSystemLoadDialog());
         systemInformation.addComponentAsFirst(VaadinIcon.INFO_CIRCLE_O.create());
 
