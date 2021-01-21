@@ -35,7 +35,7 @@ public class MainViewComponents {
         MenuItem file = menuBar.addItem("File");
         file.addComponentAsFirst(VaadinIcon.CLIPBOARD_TEXT.create());
 
-        file.getSubMenu().addItem("Mark as not viewed", e -> {
+        file.getSubMenu().addItem("Mark as to watch", e -> {
             if (mainView.getFilesGrid() == null
                     || mainView.getFilesGrid().getSelectedItems().size() == 0) {
                 return;
