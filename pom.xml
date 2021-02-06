@@ -4,8 +4,8 @@
     <artifactId>brownie-video-server</artifactId>
     <name>Brownie Video Server</name>
     <version>1.0.6</version>
-    <packaging>war</packaging>
-<!--    <packaging>jar</packaging>-->
+<!--    <packaging>war</packaging>-->
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
