@@ -127,6 +127,18 @@ public class UploadsDialog extends Dialog implements IEventListener {
                 EventsManager.getManager().unregisterListener(this);
             }
         });
+
+        this.addDetachListener(e -> {
+            try {
+                if (upload != null) mainLayout.remove(upload);
+                mainLayout.remove(closeButton);
+                upload = null;
+            } catch (IllegalArgumentException ex) {
+                // It's ok
+            } finally {
+                EventsManager.getManager().unregisterListener(this);
+            }
+        });
     }
 
     public static String getFoldersComboBoxValue(ComboBox<String> comboBox) {
