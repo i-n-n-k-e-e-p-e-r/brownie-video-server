@@ -3,9 +3,9 @@
     <groupId>org.brownie.server</groupId>
     <artifactId>brownie-video-server</artifactId>
     <name>Brownie Video Server</name>
-    <version>1.0.5</version>
-<!--    <packaging>war</packaging>-->
-    <packaging>jar</packaging>
+    <version>1.0.6</version>
+    <packaging>war</packaging>
+<!--    <packaging>jar</packaging>-->
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <vaadin.version>14.4.4</vaadin.version>
+        <vaadin.version>14.4.7</vaadin.version>
 
     </properties>
 
