@@ -1,9 +1,11 @@
 ## Description
 Simple private web file server (Vaadin 14, Java 11).    
-Share files with your homies, buddies and grannies.  
-Uploads video with encoding to h.264 mp4 container with the same resolution as in source file, stereo audio in 256kbs acc (encoding settings will be added in the future).
-Other files uploaded unchanged.  
-Supports preview for text, images, video an audio files.  
+Share files with your homies, buddies and grannies.
+First of all it was created for uploading videos in any format through web gui and then watch it in browser on tablet or anyware.
+Server encodes uploaded video to h.264 mp4 container with the same resolution and fps as in source file and stereo audio in 256kbs acc (encoding settings will be added in the future).
+Other files are uploaded unchanged.
+Supports preview and play for video, audio, text and images.
+Supports Safary, Firefox, Chrome and Edge.
 Desktop and mobile layout.
 
 ## Build 
