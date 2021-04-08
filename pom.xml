@@ -3,7 +3,7 @@
     <groupId>org.brownie.server</groupId>
     <artifactId>brownie-video-server</artifactId>
     <name>Brownie Video Server</name>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
 <!--    <packaging>war</packaging>-->
     <packaging>jar</packaging>
 
@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <vaadin.version>14.4.7</vaadin.version>
+        <vaadin.version>14.5.1</vaadin.version>
 
     </properties>
 
@@ -145,7 +145,7 @@
         <dependency>
 	        <groupId>com.brownie.videojs</groupId>
 	        <artifactId>video-js-player</artifactId>
-	        <version>1.0.7</version>
+	        <version>1.0.8</version>
 	    </dependency>
         <dependency>
             <groupId>org.vaadin.olli</groupId>

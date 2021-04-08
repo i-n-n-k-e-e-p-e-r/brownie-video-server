@@ -29,7 +29,7 @@ public class BrownieFileData extends FileData {
         return this.outputBuffer;
     }
 
-    File getFile() {
+    public File getFile() {
         if (this.outputBuffer == null) {
             throw new NullPointerException("OutputBuffer is null");
         } else if (this.outputBuffer instanceof BrownieUploadOutputStream) {
