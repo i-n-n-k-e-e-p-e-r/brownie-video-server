@@ -2,7 +2,6 @@ package org.brownie.server.views;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
@@ -21,6 +20,8 @@ import org.brownie.server.events.EventsManager;
 import org.brownie.server.providers.FileSystemDataProvider;
 import org.brownie.server.providers.MediaDirectories;
 import org.brownie.server.recoder.VideoDecoder;
+import org.claspina.confirmdialog.ButtonOption;
+import org.claspina.confirmdialog.ConfirmDialog;
 
 import javax.validation.constraints.NotNull;
 import java.io.File;
@@ -75,25 +76,23 @@ public class MainViewComponents {
                     return;
                 }
 
-                ConfirmDialog cd = new ConfirmDialog();
-                cd.setRejectable(true);
-                cd.addRejectListener(rEvent -> cd.close());
-                cd.setHeader("Are you shure?");
-                cd.setText("Selected files and folders will be deleted.");
-                cd.addConfirmListener(event -> {
-                    Object[] toDelete = null;
-                    if (mainView.getFilesGrid() != null) {
-                        toDelete = new Object[mainView.getFilesGrid().getSelectedItems().size()];
-                        mainView.getFilesGrid().getSelectedItems().forEach(
-                                FileSystemDataProvider::deleteFileOrDirectory);
-                    }
-                    EventsManager.getManager()
-                            .notifyAllListeners(EventsManager.EVENT_TYPE.FILE_DELETED,
-                                    mainView.getCurrentUser(), toDelete);
-                    cd.close();
-                });
-                cd.addRejectListener(event -> cd.close());
-                cd.open();
+                ConfirmDialog
+                        .createQuestion()
+                        .withCaption("Are you shure?")
+                        .withMessage("Selected files and folders will be deleted.")
+                        .withOkButton(() -> {
+                            Object[] toDelete = null;
+                            if (mainView.getFilesGrid() != null) {
+                                toDelete = new Object[mainView.getFilesGrid().getSelectedItems().size()];
+                                mainView.getFilesGrid().getSelectedItems().forEach(
+                                        FileSystemDataProvider::deleteFileOrDirectory);
+                            }
+                            EventsManager.getManager()
+                                    .notifyAllListeners(EventsManager.EVENT_TYPE.FILE_DELETED,
+                                            mainView.getCurrentUser(), toDelete);
+                        }, ButtonOption.focus(), ButtonOption.caption("Yes"))
+                        .withCancelButton(ButtonOption.caption("Cancel"))
+                        .open();
             });
 
             MenuItem uploads = menuBar.addItem("Uploads", e -> UploadsDialog.showUploadsDialog());

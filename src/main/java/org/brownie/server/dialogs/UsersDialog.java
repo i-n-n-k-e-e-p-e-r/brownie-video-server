@@ -1,6 +1,5 @@
 package org.brownie.server.dialogs;
 
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Label;
@@ -13,6 +12,8 @@ import org.brownie.server.Application;
 import org.brownie.server.db.DBConnectionProvider;
 import org.brownie.server.db.User;
 import org.brownie.server.views.CommonComponents;
+import org.claspina.confirmdialog.ButtonOption;
+import org.claspina.confirmdialog.ConfirmDialog;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -157,18 +158,18 @@ public class UsersDialog extends Dialog {
     private void openDeleteDialog(Grid<User> usersGrid) {
         if (usersGrid.getSelectedItems().size() == 0) return;
 
-        ConfirmDialog confirmDialog = new ConfirmDialog();
-        confirmDialog.setHeader("Are you shure?");
-        confirmDialog.setText("User will be deleted permanently");
-        confirmDialog.setRejectable(true);
-        confirmDialog.addRejectListener(rEvent -> confirmDialog.close());
-        confirmDialog.addConfirmListener(confirmed -> {
-            User user = usersGrid.getSelectedItems().iterator().next();
-            user.deleteUserFromDB(DBConnectionProvider.getInstance());
-            Application.LOGGER.log(System.Logger.Level.INFO,
-                    "Deleted user '" + user.getName() + "'");
-            updateUsers();
-        });
-        confirmDialog.open();
+        ConfirmDialog
+                .createQuestion()
+                .withCaption("Are you shure?")
+                .withMessage("User will be deleted permanently")
+                .withOkButton(() -> {
+                    User user = usersGrid.getSelectedItems().iterator().next();
+                    user.deleteUserFromDB(DBConnectionProvider.getInstance());
+                    Application.LOGGER.log(System.Logger.Level.INFO,
+                            "Deleted user '" + user.getName() + "'");
+                    updateUsers();
+                }, ButtonOption.focus(), ButtonOption.caption("Yes"))
+                .withCancelButton(ButtonOption.caption("Cancel"))
+                .open();
     }
 }
